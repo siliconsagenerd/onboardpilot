@@ -1,5 +1,24 @@
 <template>
-  <div class="min-h-screen grid place-items-center bg-[var(--color-canvas)] px-4 transition-colors">
+  <div class="min-h-screen grid place-items-center bg-[var(--color-canvas)] px-4 transition-colors relative">
+    <!-- Top-right corner quick controls (Theme & Language) -->
+    <div class="absolute top-4 right-4 flex items-center gap-2">
+      <!-- Theme toggle -->
+      <button @click="toggleTheme"
+        class="px-2.5 py-1 text-xs font-mono rounded border border-[var(--color-line)] bg-[var(--color-surface)] hover:bg-[var(--color-canvas-subtle)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+        :title="isDark ? 'Switch to Light' : 'Switch to Dark'">
+        <span>{{ isDark ? '🌙' : '☀️' }}</span>
+        <span class="text-[10px] uppercase font-semibold">{{ isDark ? 'Dark' : 'Light' }}</span>
+      </button>
+
+      <!-- Language Switcher -->
+      <div class="inline-flex rounded border border-[var(--color-line)] bg-[var(--color-surface)] p-0.5 shadow-xs" role="group" :aria-label="t('language')">
+        <button v-for="o in ['de','en']" :key="o" @click="setLang(o)"
+          :class="['px-2 py-0.5 text-[11px] font-mono rounded transition-colors cursor-pointer', lang===o ? 'bg-[var(--color-canvas-subtle)] text-[var(--color-ink)] font-semibold' : 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]']">
+          {{ o.toUpperCase() }}
+        </button>
+      </div>
+    </div>
+
     <div class="w-full max-w-sm panel p-7 relative">
       <!-- Glow effect -->
       <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-[var(--color-accent)]/15 blur-3xl pointer-events-none rounded-full"></div>
@@ -43,16 +62,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../stores/auth'
 import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const username = ref('admin')
 const password = ref('secret')
 const loading = ref(false)
 const error = ref('')
+
+const isDark = ref(false)
+
+onMounted(() => {
+  const saved = localStorage.getItem('onboardpilot_theme')
+  if (saved === 'dark') {
+    isDark.value = true
+    document.documentElement.classList.add('dark')
+  } else {
+    isDark.value = false
+    document.documentElement.classList.remove('dark')
+  }
+})
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  if (isDark.value) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('onboardpilot_theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('onboardpilot_theme', 'light')
+  }
+}
+
+const lang = computed(() => locale.value)
+function setLang(l: string) {
+  locale.value = l
+  localStorage.setItem('onboardpilot_locale', l)
+}
 
 const auth = useAuth()
 const router = useRouter()
