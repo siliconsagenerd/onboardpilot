@@ -1,27 +1,41 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-slate-50">
-    <div class="bg-white p-8 rounded-lg shadow w-full max-w-md">
-      <h1 class="text-2xl font-bold mb-6 text-center">OnboardPilot</h1>
+  <div class="min-h-screen grid place-items-center bg-canvas px-4">
+    <div class="w-full max-w-md card p-8">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-ink text-canvas font-mono text-sm font-semibold">OP</span>
+        <div>
+          <h1 class="text-xl font-semibold tracking-tight">{{ t('app') }}</h1>
+          <p class="text-sm text-muted">{{ t('login') }}</p>
+        </div>
+      </div>
       <form @submit.prevent="submit" class="space-y-4">
-        <div>
-          <label class="block text-sm mb-1">{{ t('username') }}</label>
-          <input v-model="username" class="w-full border rounded px-3 py-2" required />
-        </div>
-        <div>
-          <label class="block text-sm mb-1">{{ t('password') }}</label>
-          <input v-model="password" type="password" class="w-full border rounded px-3 py-2" required />
-        </div>
-        <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
-        <button :disabled="loading" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50">
-          {{ loading ? '...' : t('login') }}
+        <label class="block">
+          <span class="text-sm font-medium text-ink-soft">{{ t('username') }}</span>
+          <input v-model="username" type="text" autocomplete="username" required
+            class="mt-1 w-full rounded-md border border-line bg-surface px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none" />
+        </label>
+        <label class="block">
+          <span class="text-sm font-medium text-ink-soft">{{ t('password') }}</span>
+          <input v-model="password" type="password" autocomplete="current-password" required
+            class="mt-1 w-full rounded-md border border-line bg-surface px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none" />
+        </label>
+        <p v-if="error" class="text-sm text-danger" role="alert">{{ error }}</p>
+        <button :disabled="loading" type="submit"
+          class="w-full rounded-md bg-ink text-canvas py-2.5 text-sm font-medium hover:bg-ink-soft disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          {{ loading ? '…' : t('login') }}
         </button>
       </form>
-      <div class="mt-4 text-xs text-slate-500">
-        <p>Demo: admin / Admin123!</p>
-        <p>manager / Manager123!</p>
-        <p>employee / Employee123!</p>
+      <div class="mt-6 pt-4 border-t border-line">
+        <p class="text-xs text-muted mb-2">{{ t('demo_credentials') }}</p>
+        <ul class="text-xs text-ink-soft space-y-0.5 font-mono">
+          <li>admin / Admin123!</li>
+          <li>manager / Manager123!</li>
+          <li>employee / Employee123!</li>
+        </ul>
       </div>
-      <router-link to="/public-demo" class="block text-center mt-4 text-blue-600 text-sm">{{ t('public_demo') }}</router-link>
+      <router-link to="/public-demo" class="block text-center mt-4 text-sm text-accent hover:underline">
+        {{ t('public_demo') }}
+      </router-link>
     </div>
   </div>
 </template>
@@ -48,7 +62,7 @@ async function submit() {
     if (auth.role === 'employee') router.push('/cases')
     else router.push('/')
   } catch (e: any) {
-    error.value = e.response?.data?.detail || 'Login failed'
+    error.value = e.response?.data?.detail || t('failed_login')
   } finally {
     loading.value = false
   }

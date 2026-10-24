@@ -1,15 +1,26 @@
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-4">{{ t('guides') }}</h1>
-    <input v-model="q" :placeholder="t('search')" class="border rounded px-3 py-2 mb-4 w-full md:w-64" />
-    <div v-if="loading" class="text-slate-500">Loading...</div>
-    <div v-else-if="!filtered.length" class="text-slate-400">No guides</div>
-    <div v-else class="grid md:grid-cols-2 gap-4">
-      <div v-for="g in filtered" :key="g.id" class="bg-white p-4 rounded shadow">
-        <h2 class="font-semibold">{{ lang==='de'?g.title_de:g.title_en }}</h2>
-        <p class="text-xs text-slate-500 mb-2">{{ g.category }}</p>
-        <div class="text-sm whitespace-pre-wrap">{{ lang==='de'?g.content_de:g.content_en }}</div>
+    <div class="flex items-end justify-between mb-6 gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">{{ t('guides') }}</h1>
+        <p class="text-sm text-muted mt-1">{{ filtered.length }} {{ t('guides').toLowerCase() }}</p>
       </div>
+      <input v-model="q" :placeholder="t('search')"
+        class="rounded-md border border-line bg-surface px-3 py-1.5 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none w-full sm:w-64" />
+    </div>
+
+    <div v-if="loading" class="card p-6 text-muted">{{ t('loading') }}</div>
+    <div v-else-if="!filtered.length" class="card p-8 text-center text-muted">{{ t('no_guides') }}</div>
+    <div v-else class="grid md:grid-cols-2 gap-4">
+      <article v-for="g in filtered" :key="g.id" class="card p-5 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <span class="text-xs uppercase tracking-wider text-muted font-mono">{{ g.category }}</span>
+          </div>
+          <h2 class="text-lg font-semibold tracking-tight text-ink mb-3">{{ lang==='de'?g.title_de:g.title_en }}</h2>
+          <div class="text-sm text-ink-soft whitespace-pre-wrap leading-relaxed">{{ lang==='de'?g.content_de:g.content_en }}</div>
+        </div>
+      </article>
     </div>
   </div>
 </template>

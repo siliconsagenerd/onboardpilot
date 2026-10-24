@@ -1,10 +1,15 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-      <h1 class="text-2xl font-bold">{{ t('cases') }}</h1>
-      <div class="flex gap-2">
-        <input v-model="q" :placeholder="t('search')" class="border rounded px-3 py-2" />
-        <select v-model="status" class="border rounded px-3 py-2">
+    <div class="flex items-end justify-between mb-6 gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">{{ t('cases') }}</h1>
+        <p class="text-sm text-muted mt-1">{{ filtered.length }} {{ t('cases').toLowerCase() }}</p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <input v-model="q" :placeholder="t('search')"
+          class="rounded-md border border-line bg-surface px-3 py-1.5 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none w-48 sm:w-64" />
+        <select v-model="status"
+          class="rounded-md border border-line bg-surface px-3 py-1.5 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none">
           <option value="">{{ t('all') }}</option>
           <option value="not_started">{{ t('not_started') }}</option>
           <option value="in_progress">{{ t('in_progress') }}</option>
@@ -12,30 +17,42 @@
         </select>
       </div>
     </div>
-    <div v-if="loading" class="text-slate-500">Loading...</div>
-    <div v-else-if="error" class="text-red-600">{{ error }}</div>
-    <div v-else-if="!filtered.length" class="text-slate-400">No cases</div>
-    <div v-else class="bg-white rounded shadow overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-100">
-          <tr>
-            <th class="text-left p-3">{{ t('employee') }}</th>
-            <th class="text-left p-3">{{ t('role') }}</th>
-            <th class="text-left p-3">{{ t('department') }}</th>
-            <th class="text-left p-3">{{ t('start_date') }}</th>
-            <th class="text-left p-3">{{ t('status') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in filtered" :key="c.id" class="border-t hover:bg-slate-50 cursor-pointer" @click="go(c.id)">
-            <td class="p-3 text-blue-600">{{ c.employee_name }}</td>
-            <td class="p-3">{{ c.role_template }}</td>
-            <td class="p-3">{{ c.department }}</td>
-            <td class="p-3">{{ c.start_date }}</td>
-            <td class="p-3"><span class="px-2 py-1 rounded text-xs bg-slate-100">{{ t(c.status) || c.status }}</span></td>
-          </tr>
-        </tbody>
-      </table>
+
+    <div v-if="loading" class="card p-6 text-muted">{{ t('loading') }}</div>
+    <div v-else-if="error" class="card p-6 text-danger" role="alert">{{ error }}</div>
+    <div v-else-if="!filtered.length" class="card p-8 text-center text-muted">{{ t('no_cases') }}</div>
+    <div v-else class="card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-surface-2 border-b border-line text-left text-xs uppercase tracking-wider text-muted">
+            <tr>
+              <th scope="col" class="p-3.5 font-medium">{{ t('employee') }}</th>
+              <th scope="col" class="p-3.5 font-medium">{{ t('role') }}</th>
+              <th scope="col" class="p-3.5 font-medium">{{ t('department') }}</th>
+              <th scope="col" class="p-3.5 font-medium">{{ t('start_date') }}</th>
+              <th scope="col" class="p-3.5 font-medium">{{ t('status') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            <tr v-for="c in filtered" :key="c.id"
+              class="hover:bg-surface-2 cursor-pointer transition-colors"
+              @click="go(c.id)" tabindex="0" @keydown.enter="go(c.id)">
+              <td class="p-3.5 font-medium text-ink">
+                <span class="text-accent hover:underline">{{ c.employee_name }}</span>
+              </td>
+              <td class="p-3.5 text-ink-soft">{{ c.role_template }}</td>
+              <td class="p-3.5 text-ink-soft">{{ c.department }}</td>
+              <td class="p-3.5 mono text-xs text-muted">{{ c.start_date }}</td>
+              <td class="p-3.5">
+                <span class="text-xs px-2.5 py-1 rounded-md font-medium border"
+                  :class="statusBadge(c.status)">
+                  {{ t(c.status) || c.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
@@ -61,12 +78,18 @@ const filtered = computed(() => cases.value.filter(c => {
   return true
 }))
 
+function statusBadge(s: string) {
+  if (s === 'completed') return 'bg-accent-soft text-accent-ink border-accent/20'
+  if (s === 'in_progress') return 'bg-info-soft text-info border-info/20'
+  return 'bg-surface-2 text-ink-soft border-line'
+}
+
 onMounted(async () => {
   try {
     const r = await api.get('/api/cases')
     cases.value = r.data
   } catch (e: any) {
-    error.value = e.response?.data?.detail || 'Failed'
+    error.value = e.response?.data?.detail || t('failed_load')
   } finally {
     loading.value = false
   }
