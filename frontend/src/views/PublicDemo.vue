@@ -1,81 +1,96 @@
 <template>
-  <div>
-    <div class="mb-6">
-      <h1 class="text-2xl font-semibold tracking-tight">{{ t('public_demo') }}</h1>
-      <p class="text-sm text-muted mt-1">{{ t('public_demo_desc') }}</p>
+  <div class="space-y-4">
+    <div class="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-white/[0.08]">
+      <div>
+        <h1 class="text-xl font-semibold tracking-tight text-[#f7f8f8]">{{ t('public_demo') }}</h1>
+        <p class="text-xs text-[#8a8f98] mt-0.5 font-mono">{{ t('public_demo_desc') }}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="status-badge bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20">READ-ONLY TELEMETRY</span>
+      </div>
     </div>
 
-    <div v-if="loading" class="card p-6 text-muted">{{ t('loading') }}</div>
-    <div v-else-if="error" class="card p-6 text-danger" role="alert">{{ error }}</div>
-    <div v-else class="space-y-6">
-      <div class="card p-5">
+    <div v-if="loading" class="panel p-8 text-center text-xs font-mono text-[#8a8f98]">{{ t('loading') }}</div>
+    <div v-else-if="error" class="panel p-4 text-xs font-mono text-[#f43f5e] bg-[#f43f5e]/10 border-[#f43f5e]/30" role="alert">{{ error }}</div>
+    <div v-else class="space-y-4">
+      <!-- Public Hero Panel -->
+      <div class="panel p-5">
         <div class="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h2 class="text-xl font-semibold text-ink">{{ data?.case?.employee_name }}</h2>
-            <p class="text-sm text-muted mt-1">
-              {{ data?.case?.role_template }} · {{ data?.case?.department }} · <span class="mono">{{ data?.case?.start_date }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[#62666d] font-mono text-xs">#{{ data?.case?.id?.slice(0, 8) }}</span>
+              <h2 class="text-lg font-semibold text-[#f7f8f8]">{{ data?.case?.employee_name }}</h2>
+            </div>
+            <p class="text-xs text-[#8a8f98] mt-1 font-mono">
+              {{ data?.case?.role_template }} · {{ data?.case?.department }} · {{ data?.case?.start_date }}
             </p>
           </div>
-          <span class="text-xs px-2.5 py-1 rounded-md font-medium border bg-surface-2 text-ink-soft border-line">
-            {{ t(data?.case?.status) || data?.case?.status }}
+          <span class="status-badge" :class="statusBadge(data?.case?.status || '')">
+            <span class="h-1.5 w-1.5 rounded-full" :class="statusDot(data?.case?.status || '')"></span>
+            {{ t(data?.case?.status || '') || data?.case?.status }}
           </span>
         </div>
       </div>
 
-      <div class="grid md:grid-cols-2 gap-6">
-        <section class="card p-5">
-          <h3 class="text-sm font-semibold tracking-tight uppercase text-muted mb-3 font-mono">{{ t('checklist') }}</h3>
+      <!-- Split Sections -->
+      <div class="grid md:grid-cols-2 gap-4">
+        <!-- Checklist items -->
+        <section class="panel p-4">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.08]">
+            <h3 class="text-xs font-semibold uppercase tracking-wider font-mono text-[#8a8f98]">{{ t('checklist') }}</h3>
+            <span class="kbd">{{ data?.checklist?.length ?? 0 }}</span>
+          </div>
           <div class="space-y-2">
             <div v-for="it in data?.checklist" :key="it.id"
-              class="p-3 rounded-md border border-line bg-surface-2 flex items-center justify-between gap-2 text-sm">
-              <span class="font-medium text-ink">{{ lang==='de'?it.title_de:it.title_en }}</span>
-              <span class="text-xs px-2 py-0.5 rounded border mono"
-                :class="it.status==='completed'?'bg-accent-soft text-accent-ink border-accent/20':'bg-surface text-muted border-line'">
+              class="p-2.5 rounded border border-white/[0.04] bg-white/[0.02] flex items-center justify-between gap-2 text-xs">
+              <span class="font-medium text-[#f7f8f8]">{{ lang==='de'?it.title_de:it.title_en }}</span>
+              <span class="status-badge" :class="statusBadge(it.status)">
+                <span class="h-1 w-1 rounded-full" :class="statusDot(it.status)"></span>
                 {{ t(it.status) || it.status }}
               </span>
             </div>
           </div>
         </section>
 
-        <section class="card p-5">
-          <h3 class="text-sm font-semibold tracking-tight uppercase text-muted mb-3 font-mono">{{ t('hardware') }}</h3>
-          <div class="space-y-2">
-            <div v-for="h in data?.hardware" :key="h.id"
-              class="p-3 rounded-md border border-line bg-surface-2 flex items-center justify-between gap-2 text-sm">
-              <div>
-                <span class="font-medium text-ink">{{ h.asset_type }}</span>
-                <span class="text-xs text-muted block">{{ h.brand_model }}</span>
+        <!-- Hardware & Access -->
+        <div class="space-y-4">
+          <section class="panel p-4">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.08]">
+              <h3 class="text-xs font-semibold uppercase tracking-wider font-mono text-[#8a8f98]">{{ t('hardware') }}</h3>
+              <span class="kbd">{{ data?.hardware?.length ?? 0 }}</span>
+            </div>
+            <div class="space-y-2">
+              <div v-for="h in data?.hardware" :key="h.id"
+                class="p-2.5 rounded border border-white/[0.04] bg-white/[0.02] flex items-center justify-between gap-2 text-xs">
+                <div>
+                  <div class="font-medium text-[#f7f8f8]">{{ h.asset_type }}</div>
+                  <div class="text-[10px] text-[#62666d] font-mono">{{ h.brand_model || '-' }}</div>
+                </div>
+                <span class="status-badge"
+                  :class="h.handover_date ? 'bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20' : 'bg-white/[0.04] text-[#8a8f98] border border-white/[0.08]'">
+                  {{ h.handover_date ? t('handed_over') : t('pending') }}
+                </span>
               </div>
-              <span class="text-xs mono" :class="h.handover_date ? 'text-accent font-medium' : 'text-muted'">
-                {{ h.handover_date ? (t('handover_date') + ': ' + h.handover_date) : t('not_handed_over') }}
-              </span>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section class="card p-5">
-          <h3 class="text-sm font-semibold tracking-tight uppercase text-muted mb-3 font-mono">{{ t('access') }}</h3>
-          <div class="space-y-2">
-            <div v-for="a in data?.access" :key="a.id"
-              class="p-3 rounded-md border border-line bg-surface-2 flex items-center justify-between gap-2 text-sm">
-              <span class="font-medium text-ink">{{ a.access_type }}</span>
-              <span class="text-xs px-2 py-0.5 rounded border mono bg-surface text-ink-soft border-line">
-                {{ t(a.status) || a.status }}
-              </span>
+          <section class="panel p-4">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.08]">
+              <h3 class="text-xs font-semibold uppercase tracking-wider font-mono text-[#8a8f98]">{{ t('access') }}</h3>
+              <span class="kbd">{{ data?.access?.length ?? 0 }}</span>
             </div>
-          </div>
-        </section>
-
-        <section class="card p-5">
-          <h3 class="text-sm font-semibold tracking-tight uppercase text-muted mb-3 font-mono">{{ t('guides') }}</h3>
-          <div class="space-y-2">
-            <div v-for="g in data?.guides" :key="g.id"
-              class="p-3 rounded-md border border-line bg-surface-2 text-sm">
-              <div class="font-medium text-ink">{{ lang==='de'?g.title_de:g.title_en }}</div>
-              <div class="text-xs text-muted mono mt-0.5">{{ g.category }}</div>
+            <div class="space-y-2">
+              <div v-for="a in data?.access" :key="a.id"
+                class="p-2.5 rounded border border-white/[0.04] bg-white/[0.02] flex items-center justify-between gap-2 text-xs">
+                <span class="font-medium text-[#f7f8f8]">{{ a.access_type }}</span>
+                <span class="status-badge" :class="statusBadge(a.status)">
+                  <span class="h-1 w-1 rounded-full" :class="statusDot(a.status)"></span>
+                  {{ t(a.status) || a.status }}
+                </span>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </div>
   </div>
@@ -92,9 +107,21 @@ const data = ref<any>(null)
 const loading = ref(true)
 const error = ref('')
 
+function statusBadge(s: string) {
+  if (s === 'completed' || s === 'verified') return 'bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20'
+  if (s === 'in_progress' || s === 'provisioned') return 'bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20'
+  return 'bg-white/[0.04] text-[#8a8f98] border border-white/[0.08]'
+}
+
+function statusDot(s: string) {
+  if (s === 'completed' || s === 'verified') return 'bg-[#10b981]'
+  if (s === 'in_progress' || s === 'provisioned') return 'bg-[#5e6ad2]'
+  return 'bg-[#8a8f98]'
+}
+
 onMounted(async () => {
   try {
-    const r = await api.get('/public/demo')
+    const r = await api.get('/api/public/demo')
     data.value = r.data
   } catch (e: any) {
     error.value = e.response?.data?.detail || t('failed_load')

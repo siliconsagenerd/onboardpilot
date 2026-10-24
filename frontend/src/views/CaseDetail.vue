@@ -1,51 +1,57 @@
 <template>
   <div>
-    <div v-if="loading" class="card p-6 text-muted">{{ t('loading') }}</div>
-    <div v-else-if="error" class="card p-6 text-danger" role="alert">{{ error }}</div>
-    <div v-else class="space-y-6">
-      <div class="card p-5 flex items-center justify-between gap-4 flex-wrap">
+    <div v-if="loading" class="panel p-8 text-center text-xs font-mono text-[#8a8f98]">{{ t('loading') }}</div>
+    <div v-else-if="error" class="panel p-4 text-xs font-mono text-[#f43f5e] bg-[#f43f5e]/10 border-[#f43f5e]/30" role="alert">{{ error }}</div>
+    <div v-else class="space-y-4">
+      <!-- Employee Banner -->
+      <div class="panel p-5 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <div class="flex items-center gap-3 flex-wrap">
-            <h1 class="text-2xl font-semibold tracking-tight text-ink">{{ caseData?.employee_name }}</h1>
-            <span class="text-xs px-2.5 py-0.5 rounded-md font-medium border bg-surface-2 text-ink-soft border-line">
+            <span class="text-[#62666d] font-mono text-xs">#{{ caseData?.id.slice(0, 8) }}</span>
+            <h1 class="text-xl font-semibold tracking-tight text-[#f7f8f8]">{{ caseData?.employee_name }}</h1>
+            <span class="status-badge" :class="statusBadge(caseData?.status || '')">
+              <span class="h-1.5 w-1.5 rounded-full" :class="statusDot(caseData?.status || '')"></span>
               {{ t(caseData?.status || '') || caseData?.status }}
             </span>
           </div>
-          <p class="text-sm text-muted mt-1">
-            {{ caseData?.role_template }} · {{ caseData?.department }} · <span class="mono">{{ caseData?.start_date }}</span>
+          <p class="text-xs text-[#8a8f98] mt-1 font-mono">
+            {{ caseData?.role_template }} · {{ caseData?.department }} · {{ caseData?.start_date }}
           </p>
         </div>
         <button @click="downloadPdf"
-          class="rounded-md border border-line bg-surface hover:bg-surface-2 px-3.5 py-2 text-sm font-medium text-ink transition-colors focus:ring-2 focus:ring-accent/20 outline-none">
-          {{ t('handover_pdf') }}
+          class="panel px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] hover:border-white/[0.2] hover:bg-white/[0.04] transition-colors flex items-center gap-2">
+          <span class="font-mono text-[#8a8f98]">PDF</span>
+          <span>{{ t('handover_pdf') }}</span>
         </button>
       </div>
 
-      <div class="flex gap-1 border-b border-line pb-2 flex-wrap" role="tablist" :aria-label="t('cases')">
+      <!-- Linear style tabs -->
+      <div class="flex gap-1 border-b border-white/[0.08] pb-2 flex-wrap" role="tablist" :aria-label="t('cases')">
         <button v-for="tt in tabs" :key="tt" @click="tab=tt" role="tab" :aria-selected="tab===tt"
-          :class="['px-3 py-1.5 rounded-md text-sm font-medium transition-colors', tab===tt ? 'bg-ink text-canvas' : 'text-ink-soft hover:text-ink hover:bg-surface-2']">
+          :class="['px-3 py-1 text-xs font-mono rounded transition-colors', tab===tt ? 'bg-white/[0.08] text-white font-semibold' : 'text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-white/[0.02]']">
           {{ t(tt) }}
         </button>
       </div>
 
       <!-- Checklist -->
-      <div v-if="tab==='checklist'" class="space-y-3">
-        <div v-if="!checklist.length" class="card p-8 text-center text-muted">{{ t('no_items') }}</div>
-        <div v-for="it in checklist" :key="it.id" class="card p-4 space-y-2">
+      <div v-if="tab==='checklist'" class="space-y-2">
+        <div v-if="!checklist.length" class="panel p-8 text-center text-xs font-mono text-[#62666d]">{{ t('no_items') }}</div>
+        <div v-for="it in checklist" :key="it.id" class="panel p-3.5 space-y-2">
           <div class="flex items-start justify-between gap-4 flex-wrap">
             <div class="flex-1 min-w-[240px]">
-              <div class="font-medium text-ink">{{ lang==='de'?it.title_de:it.title_en }}</div>
-              <div class="text-xs text-muted mt-0.5">{{ lang==='de'?it.description_de:it.description_en }}</div>
-              <div v-if="it.depends_on?.length" class="text-xs text-warn mt-1 font-mono">
+              <div class="text-xs font-medium text-[#f7f8f8]">{{ lang==='de'?it.title_de:it.title_en }}</div>
+              <div class="text-[11px] text-[#8a8f98] mt-0.5">{{ lang==='de'?it.description_de:it.description_en }}</div>
+              <div v-if="it.depends_on?.length" class="text-[11px] text-[#f59e0b] mt-1 font-mono">
                 {{ t('depends_on') }}: {{ getDepTitles(it.depends_on) }}
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs px-2.5 py-1 rounded-md font-medium border" :class="statusClass(it.status)">
+              <span class="status-badge" :class="statusBadge(it.status)">
+                <span class="h-1.5 w-1.5 rounded-full" :class="statusDot(it.status)"></span>
                 {{ t(it.status) || it.status }}
               </span>
               <select v-if="canEditChecklist" @change="updateItem(it, $event)"
-                class="rounded-md border border-line bg-surface text-xs px-2 py-1 focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none"
+                class="linear-input text-[11px] px-2 py-0.5 font-mono"
                 :aria-label="t('action')">
                 <option value="">{{ t('action') }}</option>
                 <option value="not_started">{{ t('not_started') }}</option>
@@ -54,7 +60,7 @@
               </select>
             </div>
           </div>
-          <div v-if="it.status==='blocked'" class="card-soft border-l-4 !border-l-danger p-3 text-xs text-danger" role="alert">
+          <div v-if="it.status==='blocked'" class="border-l-2 border-[#f43f5e] bg-[#f43f5e]/10 p-2 text-xs font-mono text-[#f43f5e]" role="alert">
             <span class="font-semibold">{{ t('blocked') }}:</span> {{ blockedText(it) }}
           </div>
         </div>
@@ -62,90 +68,91 @@
 
       <!-- Hardware -->
       <div v-if="tab==='hardware'" class="space-y-4">
-        <div v-if="!hardware.length" class="card p-8 text-center text-muted">{{ t('no_hardware') }}</div>
-        <div v-for="h in hardware" :key="h.id" class="card p-4 flex items-start justify-between gap-4 flex-wrap">
+        <div v-if="!hardware.length" class="panel p-8 text-center text-xs font-mono text-[#62666d]">{{ t('no_hardware') }}</div>
+        <div v-for="h in hardware" :key="h.id" class="panel p-3.5 flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <div class="font-medium text-ink">{{ h.asset_type }} — {{ h.brand_model || '-' }}</div>
-            <div class="text-xs text-muted mt-1 font-mono">
+            <div class="text-xs font-medium text-[#f7f8f8]">{{ h.asset_type }} — {{ h.brand_model || '-' }}</div>
+            <div class="text-[11px] text-[#8a8f98] mt-1 font-mono">
               {{ t('serial_number') }}: {{ h.serial_number || '-' }} · {{ t('condition') }}: {{ t('cond_' + h.condition) || h.condition }}
               · {{ h.handover_date ? (t('handover_date') + ': ' + h.handover_date) : t('not_handed_over') }}
             </div>
-            <div v-if="h.notes" class="text-xs text-ink-soft mt-1">{{ h.notes }}</div>
+            <div v-if="h.notes" class="text-[11px] text-[#62666d] mt-1">{{ h.notes }}</div>
           </div>
-          <span class="text-xs px-2.5 py-1 rounded-md font-medium border mono"
-            :class="h.handover_date ? 'bg-accent-soft text-accent-ink border-accent/20' : 'bg-surface-2 text-muted border-line'">
+          <span class="status-badge"
+            :class="h.handover_date ? 'bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20' : 'bg-white/[0.04] text-[#8a8f98] border border-white/[0.08]'">
             {{ h.handover_date ? t('handed_over') : t('pending') }}
           </span>
         </div>
 
-        <form v-if="isAdmin" @submit.prevent="submitHandover" class="card p-5 space-y-4" :aria-label="t('record_handover')">
-          <h2 class="font-semibold text-ink">{{ t('record_handover') }}</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label class="text-xs font-medium text-ink-soft flex flex-col gap-1">
+        <form v-if="isAdmin" @submit.prevent="submitHandover" class="panel p-4 space-y-3" :aria-label="t('record_handover')">
+          <h2 class="text-xs font-semibold uppercase tracking-wider font-mono text-[#8a8f98]">{{ t('record_handover') }}</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="text-[11px] font-mono text-[#8a8f98] flex flex-col gap-1">
               {{ t('asset') }}
               <select v-model="handover.asset_id" required
-                class="rounded-md border border-line bg-surface px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none">
+                class="linear-input text-xs px-2.5 py-1.5 font-sans">
                 <option value="" disabled>{{ t('select_asset') }}</option>
                 <option v-for="h in pendingAssets" :key="h.id" :value="h.id">
                   {{ h.asset_type }} — {{ h.brand_model || h.serial_number || h.id }}
                 </option>
               </select>
             </label>
-            <label class="text-xs font-medium text-ink-soft flex flex-col gap-1">
+            <label class="text-[11px] font-mono text-[#8a8f98] flex flex-col gap-1">
               {{ t('handover_date') }}
               <input v-model="handover.handover_date" type="date" required
-                class="rounded-md border border-line bg-surface px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none" />
+                class="linear-input text-xs px-2.5 py-1.5 font-mono" />
             </label>
-            <label class="text-xs font-medium text-ink-soft flex flex-col gap-1">
+            <label class="text-[11px] font-mono text-[#8a8f98] flex flex-col gap-1">
               {{ t('condition') }}
               <select v-model="handover.condition"
-                class="rounded-md border border-line bg-surface px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none">
+                class="linear-input text-xs px-2.5 py-1.5 font-sans">
                 <option value="new">{{ t('cond_new') }}</option>
                 <option value="good">{{ t('cond_good') }}</option>
                 <option value="fair">{{ t('cond_fair') }}</option>
                 <option value="needs_repair">{{ t('cond_needs_repair') }}</option>
               </select>
             </label>
-            <label class="text-xs font-medium text-ink-soft flex flex-col gap-1">
+            <label class="text-[11px] font-mono text-[#8a8f98] flex flex-col gap-1">
               {{ t('notes') }}
               <input v-model="handover.notes" type="text"
-                class="rounded-md border border-line bg-surface px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none" />
+                class="linear-input text-xs px-2.5 py-1.5 font-sans" />
             </label>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 pt-1">
             <button type="submit" :disabled="handoverBusy"
-              class="rounded-md bg-ink text-canvas px-4 py-2 text-sm font-medium hover:bg-ink-soft disabled:opacity-50 transition-colors">
+              class="px-3.5 py-1.5 text-xs font-medium rounded bg-[#5e6ad2] hover:bg-[#6875e5] text-white disabled:opacity-50 transition-colors shadow-sm">
               {{ handoverBusy ? t('saving') : t('save') }}
             </button>
-            <span v-if="handoverMsg" class="text-xs text-accent font-medium" role="status">{{ handoverMsg }}</span>
-            <span v-if="handoverErr" class="text-xs text-danger" role="alert">{{ handoverErr }}</span>
+            <span v-if="handoverMsg" class="text-xs font-mono text-[#10b981]" role="status">{{ handoverMsg }}</span>
+            <span v-if="handoverErr" class="text-xs font-mono text-[#f43f5e]" role="alert">{{ handoverErr }}</span>
           </div>
         </form>
       </div>
 
       <!-- Access -->
-      <div v-if="tab==='access'" class="space-y-3">
-        <div v-if="!access.length" class="card p-8 text-center text-muted">{{ t('no_access') }}</div>
-        <div v-for="a in access" :key="a.id" class="card p-4 flex items-center justify-between gap-4 flex-wrap">
+      <div v-if="tab==='access'" class="space-y-2">
+        <div v-if="!access.length" class="panel p-8 text-center text-xs font-mono text-[#62666d]">{{ t('no_access') }}</div>
+        <div v-for="a in access" :key="a.id" class="panel p-3.5 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <div class="font-medium text-ink">{{ a.access_type }}</div>
-            <div class="text-xs text-muted mt-0.5">{{ a.requester }}<template v-if="a.provisioning_owner"> · {{ a.provisioning_owner }}</template></div>
+            <div class="text-xs font-medium text-[#f7f8f8]">{{ a.access_type }}</div>
+            <div class="text-[11px] text-[#8a8f98] mt-0.5 font-mono">{{ a.requester }}<template v-if="a.provisioning_owner"> · {{ a.provisioning_owner }}</template></div>
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-xs px-2.5 py-1 rounded-md font-medium border" :class="statusClass(a.status)">
+            <span class="status-badge" :class="statusBadge(a.status)">
+              <span class="h-1.5 w-1.5 rounded-full" :class="statusDot(a.status)"></span>
               {{ t(a.status) || a.status }}
             </span>
             <div class="flex gap-1" v-if="isAdmin || isManager">
               <button v-if="a.status==='requested'" @click="transition(a,'approved')"
-                class="text-xs rounded border border-line bg-surface hover:bg-surface-2 px-2.5 py-1 font-medium text-ink transition-colors">
+                class="px-2.5 py-1 text-xs rounded border border-white/[0.08] hover:border-white/[0.2] bg-white/[0.04] text-[#f7f8f8] transition-colors">
                 {{ t('approve') }}
               </button>
               <button v-if="a.status==='approved'" @click="transition(a,'provisioned')"
-                class="text-xs rounded border border-line bg-surface hover:bg-surface-2 px-2.5 py-1 font-medium text-ink transition-colors">
+                class="px-2.5 py-1 text-xs rounded border border-white/[0.08] hover:border-white/[0.2] bg-white/[0.04] text-[#f7f8f8] transition-colors">
                 {{ t('provision') }}
               </button>
               <button v-if="a.status==='provisioned'" @click="transition(a,'verified')"
-                class="text-xs rounded bg-accent-soft text-accent-ink hover:bg-accent/20 px-2.5 py-1 font-medium transition-colors">
+                class="px-2.5 py-1 text-xs rounded bg-[#10b981]/20 text-[#10b981] hover:bg-[#10b981]/30 transition-colors">
                 {{ t('verify') }}
               </button>
             </div>
@@ -154,20 +161,21 @@
       </div>
 
       <!-- Open items -->
-      <div v-if="tab==='open_items'" class="space-y-3">
-        <div v-if="!openItems.length" class="card p-8 text-center text-muted">{{ t('no_open_items') }}</div>
-        <div v-for="o in openItems" :key="o.id" class="card p-4 flex items-center justify-between gap-4 flex-wrap">
+      <div v-if="tab==='open_items'" class="space-y-2">
+        <div v-if="!openItems.length" class="panel p-8 text-center text-xs font-mono text-[#62666d]">{{ t('no_open_items') }}</div>
+        <div v-for="o in openItems" :key="o.id" class="panel p-3.5 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <div class="font-medium text-ink">{{ o.title }}</div>
-            <div class="text-xs text-muted mt-0.5">{{ o.description }}</div>
-            <div v-if="o.due_date" class="text-xs text-muted mt-0.5 font-mono">{{ t('due_date') }}: {{ o.due_date }}</div>
+            <div class="text-xs font-medium text-[#f7f8f8]">{{ o.title }}</div>
+            <div class="text-[11px] text-[#8a8f98] mt-0.5">{{ o.description }}</div>
+            <div v-if="o.due_date" class="text-[11px] text-[#62666d] mt-0.5 font-mono">{{ t('due_date') }}: {{ o.due_date }}</div>
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-xs px-2.5 py-1 rounded-md font-medium border" :class="statusClass(o.status)">
+            <span class="status-badge" :class="statusBadge(o.status)">
+              <span class="h-1.5 w-1.5 rounded-full" :class="statusDot(o.status)"></span>
               {{ t(o.status) || o.status }}
             </span>
             <button v-if="o.status!=='resolved' && (isAdmin || isManager)" @click="resolve(o)"
-              class="text-xs rounded border border-line bg-surface hover:bg-surface-2 px-2.5 py-1 font-medium text-ink transition-colors">
+              class="px-2.5 py-1 text-xs rounded border border-white/[0.08] hover:border-white/[0.2] bg-white/[0.04] text-[#f7f8f8] transition-colors">
               {{ t('resolve') }}
             </button>
           </div>
@@ -176,14 +184,14 @@
 
       <!-- Audit -->
       <div v-if="tab==='audit'" class="space-y-2">
-        <div v-if="!audit.length" class="card p-8 text-center text-muted">{{ t('no_audit') }}</div>
-        <div v-for="a in audit" :key="a.id" class="card p-3.5 text-xs space-y-1">
+        <div v-if="!audit.length" class="panel p-8 text-center text-xs font-mono text-[#62666d]">{{ t('no_audit') }}</div>
+        <div v-for="a in audit" :key="a.id" class="panel p-3 text-xs space-y-1">
           <div class="flex items-baseline justify-between gap-2 flex-wrap">
-            <span class="font-semibold text-ink">{{ a.action }}</span>
-            <span class="text-muted mono">{{ a.timestamp }}</span>
+            <span class="font-semibold text-[#f7f8f8] font-mono">{{ a.action }}</span>
+            <span class="text-[#62666d] font-mono text-[11px]">{{ a.timestamp }}</span>
           </div>
-          <div class="text-ink-soft">{{ a.description }}</div>
-          <div class="text-muted font-mono">{{ a.actor }} · {{ a.entity_type }}</div>
+          <div class="text-[#8a8f98] text-xs">{{ a.description }}</div>
+          <div class="text-[#62666d] font-mono text-[10px]">{{ a.actor }} · {{ a.entity_type }}</div>
         </div>
       </div>
     </div>
@@ -271,11 +279,18 @@ function blockedText(it: ChecklistItem) {
   return deps ? `${t('blocked')}: ${deps}` : ''
 }
 
-function statusClass(s: string) {
-  if (s === 'blocked') return 'bg-warn-soft text-warn border-warn/20'
-  if (s === 'completed' || s === 'verified' || s === 'resolved') return 'bg-accent-soft text-accent-ink border-accent/20'
-  if (s === 'in_progress' || s === 'approved' || s === 'provisioned' || s === 'open') return 'bg-info-soft text-info border-info/20'
-  return 'bg-surface-2 text-ink-soft border-line'
+function statusBadge(s: string) {
+  if (s === 'blocked') return 'bg-[#f43f5e]/10 text-[#f43f5e] border border-[#f43f5e]/20'
+  if (s === 'completed' || s === 'verified' || s === 'resolved') return 'bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20'
+  if (s === 'in_progress' || s === 'approved' || s === 'provisioned' || s === 'open') return 'bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20'
+  return 'bg-white/[0.04] text-[#8a8f98] border border-white/[0.08]'
+}
+
+function statusDot(s: string) {
+  if (s === 'blocked') return 'bg-[#f43f5e]'
+  if (s === 'completed' || s === 'verified' || s === 'resolved') return 'bg-[#10b981]'
+  if (s === 'in_progress' || s === 'approved' || s === 'provisioned' || s === 'open') return 'bg-[#5e6ad2]'
+  return 'bg-[#8a8f98]'
 }
 
 async function updateItem(it: ChecklistItem, e: Event) {
