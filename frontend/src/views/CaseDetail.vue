@@ -71,7 +71,7 @@
         <div v-if="!hardware.length" class="panel p-8 text-center text-xs font-mono text-[var(--color-muted)]">{{ t('no_hardware') }}</div>
         <div v-for="h in hardware" :key="h.id" class="panel p-3.5 flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <div class="text-xs font-medium text-[var(--color-ink)]">{{ h.asset_type }} — {{ h.brand_model || '-' }}</div>
+            <div class="text-xs font-medium text-[var(--color-ink)]">{{ h.asset_type }} · {{ h.brand_model || '-' }}</div>
             <div class="text-[11px] text-[var(--color-ink-soft)] mt-1 font-mono">
               {{ t('serial_number') }}: {{ h.serial_number || '-' }} · {{ t('condition') }}: {{ t('cond_' + h.condition) || h.condition }}
               · {{ h.handover_date ? (t('handover_date') + ': ' + h.handover_date) : t('not_handed_over') }}
@@ -93,7 +93,7 @@
                 class="linear-input text-xs px-2.5 py-1.5 font-sans">
                 <option value="" disabled>{{ t('select_asset') }}</option>
                 <option v-for="h in pendingAssets" :key="h.id" :value="h.id">
-                  {{ h.asset_type }} — {{ h.brand_model || h.serial_number || h.id }}
+                  {{ h.asset_type }} · {{ h.brand_model || h.serial_number || h.id }}
                 </option>
               </select>
             </label>
