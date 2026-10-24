@@ -1,15 +1,15 @@
 <template>
   <div class="space-y-4">
     <!-- Header with quick controls -->
-    <div class="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-white/[0.08]">
+    <div class="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-[var(--color-line)]">
       <div>
-        <h1 class="text-xl font-semibold tracking-tight text-[#f7f8f8]">{{ t('cases') }}</h1>
-        <p class="text-xs text-[#8a8f98] mt-0.5 font-mono">{{ filtered.length }} {{ t('cases').toLowerCase() }} total</p>
+        <h1 class="text-xl font-semibold tracking-tight text-[var(--color-ink)]">{{ t('cases') }}</h1>
+        <p class="text-xs text-[var(--color-ink-soft)] mt-0.5 font-mono">{{ filtered.length }} {{ t('cases').toLowerCase() }} total</p>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
         <div class="relative">
           <input v-model="q" :placeholder="t('search')"
-            class="linear-input text-xs px-3 py-1.5 w-48 sm:w-64 placeholder-[#62666d]" />
+            class="linear-input text-xs px-3 py-1.5 w-48 sm:w-64 placeholder-[var(--color-muted)]" />
           <span class="absolute right-2.5 top-1.5 kbd">/</span>
         </div>
         <select v-model="status"
@@ -22,13 +22,13 @@
       </div>
     </div>
 
-    <div v-if="loading" class="panel p-8 text-center text-xs font-mono text-[#8a8f98]">{{ t('loading') }}</div>
-    <div v-else-if="error" class="panel p-4 text-xs font-mono text-[#f43f5e] bg-[#f43f5e]/10 border-[#f43f5e]/30" role="alert">{{ error }}</div>
-    <div v-else-if="!filtered.length" class="panel p-12 text-center text-xs font-mono text-[#62666d]">{{ t('no_cases') }}</div>
-    <div v-else class="panel overflow-hidden border border-white/[0.08]">
+    <div v-if="loading" class="panel p-8 text-center text-xs font-mono text-[var(--color-ink-soft)]">{{ t('loading') }}</div>
+    <div v-else-if="error" class="panel p-4 text-xs font-mono text-[var(--color-rose)] bg-[var(--color-rose-soft)] border-[var(--color-rose)]/30" role="alert">{{ error }}</div>
+    <div v-else-if="!filtered.length" class="panel p-12 text-center text-xs font-mono text-[var(--color-muted)]">{{ t('no_cases') }}</div>
+    <div v-else class="panel overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-xs">
-          <thead class="bg-[#121316] border-b border-white/[0.08] text-left text-[11px] font-mono text-[#8a8f98]">
+          <thead class="bg-[var(--color-canvas-subtle)] border-b border-[var(--color-line)] text-left text-[11px] font-mono text-[var(--color-ink-soft)]">
             <tr>
               <th scope="col" class="py-2.5 px-4 font-medium">{{ t('employee') }}</th>
               <th scope="col" class="py-2.5 px-4 font-medium">{{ t('role') }}</th>
@@ -37,19 +37,19 @@
               <th scope="col" class="py-2.5 px-4 font-medium">{{ t('status') }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-white/[0.04]">
+          <tbody class="divide-y divide-[var(--color-line-subtle)]">
             <tr v-for="c in filtered" :key="c.id"
-              class="hover:bg-white/[0.02] cursor-pointer transition-colors group"
+              class="hover:bg-[var(--color-canvas-subtle)] cursor-pointer transition-colors group"
               @click="go(c.id)" tabindex="0" @keydown.enter="go(c.id)">
-              <td class="py-3 px-4 font-medium text-[#f7f8f8]">
+              <td class="py-3 px-4 font-medium text-[var(--color-ink)]">
                 <div class="flex items-center gap-2">
-                  <span class="text-[#62666d] font-mono text-[10px] group-hover:text-[#5e6ad2] transition-colors">#{{ c.id.slice(0, 4) }}</span>
-                  <span class="group-hover:text-white transition-colors">{{ c.employee_name }}</span>
+                  <span class="text-[var(--color-muted)] font-mono text-[10px] group-hover:text-[var(--color-accent)] transition-colors">#{{ c.id.slice(0, 4) }}</span>
+                  <span class="group-hover:text-[var(--color-accent)] transition-colors">{{ c.employee_name }}</span>
                 </div>
               </td>
-              <td class="py-3 px-4 text-[#8a8f98]">{{ c.role_template }}</td>
-              <td class="py-3 px-4 text-[#8a8f98]">{{ c.department }}</td>
-              <td class="py-3 px-4 font-mono text-[11px] text-[#62666d]">{{ c.start_date }}</td>
+              <td class="py-3 px-4 text-[var(--color-ink-soft)]">{{ c.role_template }}</td>
+              <td class="py-3 px-4 text-[var(--color-ink-soft)]">{{ c.department }}</td>
+              <td class="py-3 px-4 font-mono text-[11px] text-[var(--color-muted)]">{{ c.start_date }}</td>
               <td class="py-3 px-4">
                 <span class="status-badge" :class="statusBadge(c.status)">
                   <span class="h-1.5 w-1.5 rounded-full" :class="statusDot(c.status)"></span>
@@ -86,15 +86,15 @@ const filtered = computed(() => cases.value.filter(c => {
 }))
 
 function statusBadge(s: string) {
-  if (s === 'completed') return 'bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20'
-  if (s === 'in_progress') return 'bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20'
-  return 'bg-white/[0.04] text-[#8a8f98] border border-white/[0.08]'
+  if (s === 'completed') return 'bg-[var(--color-emerald-soft)] text-[var(--color-emerald)] border border-[var(--color-emerald)]/30'
+  if (s === 'in_progress') return 'bg-[var(--color-accent-soft)] text-[var(--color-accent)] border border-[var(--color-accent)]/30'
+  return 'bg-[var(--color-canvas-subtle)] text-[var(--color-ink-soft)] border border-[var(--color-line)]'
 }
 
 function statusDot(s: string) {
-  if (s === 'completed') return 'bg-[#10b981]'
-  if (s === 'in_progress') return 'bg-[#5e6ad2]'
-  return 'bg-[#8a8f98]'
+  if (s === 'completed') return 'bg-[var(--color-emerald)]'
+  if (s === 'in_progress') return 'bg-[var(--color-accent)]'
+  return 'bg-[var(--color-muted)]'
 }
 
 onMounted(async () => {
