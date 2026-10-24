@@ -1,5 +1,4 @@
 FROM node:20-alpine AS build
-# bust cache
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -9,9 +8,7 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN npm run build
 
 FROM nginx:alpine
-RUN apk add --no-cache gettext
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf.template
-ENV PORT=80
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
-CMD sh -c "envsubst '\$PORT' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+CMD ["nginx", "-g", "daemon off;"]
