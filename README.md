@@ -2,7 +2,7 @@
 
 Internal IT onboarding orchestration for IT, managers, and new employees. One case per starter, with checklist dependencies, hardware handover, access provisioning, open items, audit trail, and a printable handover protocol.
 
-Live demo: (placeholder)
+Live demo: [Frontend (Public UI)](https://onboardpilot-frontend-production.up.railway.app) | [Backend API](https://sublime-vibrancy-production-3a42.up.railway.app)
 
 ## Features
 
