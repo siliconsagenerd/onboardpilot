@@ -1,0 +1,9 @@
+export interface User { username: string; full_name: string; role: string }
+export interface Case { id: string; employee_name: string; employee_email: string; role_template: string; department: string; start_date: string; manager_name: string; status: string; is_public_demo: boolean }
+export interface ChecklistItem { id: string; case_id: string; key: string; title_en: string; title_de: string; description_en: string; description_de: string; status: string; due_date: string; depends_on: string[]; assigned_owner: string; sort_order: number }
+export interface Hardware { id: string; case_id: string; asset_type: string; brand_model: string; serial_number: string; condition: string; handover_date: string; assigned_employee: string; return_status: string }
+export interface AccessReq { id: string; case_id: string; access_type: string; status: string; requester: string; approver: string; provisioning_owner: string; notes: string; requested_at: string; approved_at: string; provisioned_at: string; verified_at: string }
+export interface OpenItem { id: string; case_id: string; title: string; description: string; owner: string; due_date: string; priority: string; status: string; resolved_at: string }
+export interface Guide { id: string; slug: string; title_de: string; title_en: string; content_de: string; content_en: string; category: string }
+export interface AuditEntry { id: string; case_id: string; actor: string; action: string; entity_type: string; entity_id: string; description: string; timestamp: string }
+export interface DashboardSummary { total_cases: number; incomplete_cases: number; completed_cases: number; upcoming_starters: any[]; overdue_items_count: number; blocked_access_count: number; open_items_by_owner: Record<string, number>; average_progress: number; open_items_total: number }
