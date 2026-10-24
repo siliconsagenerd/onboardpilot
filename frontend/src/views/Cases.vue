@@ -5,10 +5,10 @@
       <div class="flex gap-2">
         <input v-model="q" :placeholder="t('search')" class="border rounded px-3 py-2" />
         <select v-model="status" class="border rounded px-3 py-2">
-          <option value="">All</option>
-          <option value="not_started">Not started</option>
-          <option value="in_progress">In progress</option>
-          <option value="completed">Completed</option>
+          <option value="">{{ t('all') }}</option>
+          <option value="not_started">{{ t('not_started') }}</option>
+          <option value="in_progress">{{ t('in_progress') }}</option>
+          <option value="completed">{{ t('completed') }}</option>
         </select>
       </div>
     </div>
@@ -32,7 +32,7 @@
             <td class="p-3">{{ c.role_template }}</td>
             <td class="p-3">{{ c.department }}</td>
             <td class="p-3">{{ c.start_date }}</td>
-            <td class="p-3">{{ c.status }}</td>
+            <td class="p-3"><span class="px-2 py-1 rounded text-xs bg-slate-100">{{ t(c.status) || c.status }}</span></td>
           </tr>
         </tbody>
       </table>
