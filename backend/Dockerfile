@@ -7,9 +7,8 @@ COPY alembic.ini ./
 COPY alembic/script.py.mako ./alembic/script.py.mako
 RUN pip install --no-cache-dir .
 ENV PYTHONPATH=/app/src
-ENV DB_URL=sqlite:///./data/onboardpilot.db
 ENV OPERATOR_AUTH_REQUIRED=true
 ENV SECRET_KEY=change-me-in-production
 RUN mkdir -p /app/data
 EXPOSE 8000
-CMD sh -c "alembic upgrade head && python -m onboardpilot.services.seed && uvicorn onboardpilot.main:app --host 0.0.0.0 --port 8000"
+CMD sh -c "alembic upgrade head && python -m onboardpilot.services.seed && uvicorn onboardpilot.main:app --host 0.0.0.0 --port ${PORT:-8000}"
