@@ -1,61 +1,52 @@
-# Deployment Guide — OnboardPilot
+# Deployment
 
-Production deployment documentation for OnboardPilot (Railway-only primary deployment plan).
+## Services
 
-## Architecture
+1. `sublime-vibrancy` (FastAPI backend)
+   - Source: `siliconsagenerd/onboardpilot`
+   - Root directory: repository root
+   - Dockerfile: `backend/Dockerfile`
+   - Public URL: `https://sublime-vibrancy-production-3a42.up.railway.app`
+2. `onboardpilot-frontend` (Vue 3 SPA served by nginx)
+   - Source: `siliconsagenerd/onboardpilot`
+   - Root directory: `frontend`
+   - Dockerfile: `Dockerfile`
+   - Public URL: `https://onboardpilot-frontend-production.up.railway.app`
 
-- **Backend**: FastAPI (Python 3.12) + SQLAlchemy + Alembic + SQLite (or PostgreSQL via DATABASE_URL).
-- **Frontend**: Vue 3 + TypeScript + Vite + Tailwind, built as static assets served by Nginx.
+## Backend variables (names only)
 
-## Required Environment Variables
+- `APP_ENV=production`
+- `SECRET_KEY` (required, non-default)
+- `OPERATOR_AUTH_REQUIRED=true`
+- `DATABASE_URL=sqlite:////data/onboardpilot.db`
+- `CORS_ORIGINS=https://onboardpilot-frontend-production.up.railway.app`
+- `SEED_ON_STARTUP=false`
+- `PORT=8000`
+- `RAILWAY_DOCKERFILE_PATH=backend/Dockerfile`
 
-Set these in your production hosting environment (e.g. Railway project settings):
+## Frontend variables (names only)
 
-- `SECRET_KEY`: A strong random string for session tokens and crypto security.
-- `DATABASE_URL`: Connection string (e.g. `sqlite:///./data/onboardpilot.db` or PostgreSQL connection string).
-- `CORS_ORIGINS`: Comma-separated list of allowed frontend origins (e.g. `https://your-frontend.railway.app`).
-- `OPERATOR_AUTH_REQUIRED`: Set to `true`.
+- `VITE_API_BASE_URL=https://sublime-vibrancy-production-3a42.up.railway.app`
+- `PORT=80`
 
-For the Frontend build (build-time environment variable in Railway/Vercel):
-- `VITE_API_BASE_URL`: The public backend URL (e.g. `https://your-backend.railway.app`).
+## Deployment sequence
 
-## Production Startup Command (Backend)
+1. Rotate `SECRET_KEY` if compromised.
+2. Deploy backend with migrations (`alembic upgrade head`).
+3. Run seeding explicitly only when needed (`SEED_ON_STARTUP=true` for one deploy, then set false).
+4. Set backend `CORS_ORIGINS` to the exact frontend origin.
+5. Deploy frontend with `VITE_API_BASE_URL`.
+6. Verify backend and frontend URLs.
 
-Railway or container startup command should execute database migrations, optional seeding, and start Uvicorn:
+## Code rollback
 
-```bash
-alembic upgrade head && python -m onboardpilot.services.seed && uvicorn onboardpilot.main:app --host 0.0.0.0 --port 8000
-```
+1. `git revert <commit>` or checkout the previous commit.
+2. Push the reverted commit.
+3. Redeploy the affected Railway service.
 
-## Deployment Sequence (Railway-Only)
+## Database recovery
 
-1. Connect your GitHub repository to Railway.
-2. Create two services or a monorepo multi-service setup on Railway:
-   - **Backend Service**: Root directory `.`, Dockerfile at `backend/Dockerfile` (or buildpacks with start command).
-   - **Frontend Service**: Root directory `frontend`, Dockerfile at `frontend/Dockerfile` (or static site hosting).
-3. Configure environment variables (`SECRET_KEY`, `DATABASE_URL`, `CORS_ORIGINS`, `VITE_API_BASE_URL`).
-4. Trigger deployment. Railway will build the containers and start services automatically.
-
-## Verification Commands
-
-After deployment finishes, run these checks:
-
-```bash
-# Verify backend health
-curl -i https://your-backend.railway.app/health
-
-# Verify public demo endpoint
-curl -i https://your-backend.railway.app/public/demo
-
-# Verify protected routes require auth
-curl -i https://your-backend.railway.app/api/cases
-# Expected: 401 Unauthorized
-```
-
-## Rollback Steps
-
-If a deployment introduces issues:
-1. Go to the Railway deployment history dashboard.
-2. Select the previous successful deployment.
-3. Click **Rollback** to instantly revert to the stable version.
-4. Verify `/health` and core endpoints.
+1. Back up `/data/onboardpilot.db` before any risky change.
+2. Restore the SQLite file from backup into the mounted volume.
+3. Restart the backend once.
+4. Verify `/public/demo` and a protected route.

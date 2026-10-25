@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import os
 
 from onboardpilot.auth import hash_password
 from onboardpilot.db import SessionLocal
@@ -66,16 +67,19 @@ def _seed_users(db) -> None:
     if db.query(User).count() > 0:
         return
     users = [
-        ("admin", "it.admin@onboardpilot.demo", "IT Administrator", "it_admin", "Admin123!"),
-        ("manager", "manager@onboardpilot.demo", "Team Manager", "manager", "Manager123!"),
-        ("employee", "employee@onboardpilot.demo", "New Employee", "employee", "Employee123!"),
+        ("admin", "it.admin@onboardpilot.demo", "IT Administrator", "it_admin", os.getenv("SEED_ADMIN_PASSWORD", "Admin123!")),
+        ("manager", "manager@onboardpilot.demo", "Team Manager", "manager", os.getenv("SEED_MANAGER_PASSWORD", "Manager123!")),
+        ("employee", "employee@onboardpilot.demo", "New Employee", "employee", os.getenv("SEED_EMPLOYEE_PASSWORD", "Employee123!")),
     ]
     for u, e, name, role, pw in users:
         db.add(User(username=u, email=e, full_name=name, role=role, password_hash=hash_password(pw)))
 
 
 def _seed_guides(db) -> None:
+    existing = {g.slug for g in db.query(Guide).all()}
     for slug, td, te, cd, ce, cat in GUIDES:
+        if slug in existing:
+            continue
         db.add(Guide(slug=slug, title_de=td, title_en=te, content_de=cd, content_en=ce, category=cat))
 
 

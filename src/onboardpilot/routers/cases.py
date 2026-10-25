@@ -3,20 +3,28 @@
 from __future__ import annotations
 
 import datetime as dt
+from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
 from onboardpilot.db.models import AuditLog, ChecklistItem, OnboardingCase
-from onboardpilot.deps import get_current_user
+from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
 from onboardpilot.services.templates import generate_checklist_items
 
 router = APIRouter(prefix="/api/cases", tags=["cases"])
 
-VALID_STATUSES = ["pre_boarding", "hardware_ready", "accounts_provisioned", "orientation_complete", "first_week_support", "completed"]
+CaseStatus = Literal[
+    "pre_boarding",
+    "hardware_ready",
+    "accounts_provisioned",
+    "orientation_complete",
+    "first_week_support",
+    "completed",
+]
 
 
 class CaseIn(BaseModel):
@@ -27,6 +35,16 @@ class CaseIn(BaseModel):
     start_date: str = ""
     manager_name: str = ""
     manager_email: str = ""
+
+
+class CaseUpdate(BaseModel):
+    employee_name: str | None = None
+    employee_email: str | None = None
+    department: str | None = None
+    start_date: str | None = None
+    manager_name: str | None = None
+    manager_email: str | None = None
+    status: CaseStatus | None = None
 
 
 def _case_to_dict(c: OnboardingCase) -> dict:
@@ -48,8 +66,18 @@ def _case_to_dict(c: OnboardingCase) -> dict:
 
 
 @router.get("")
-def list_cases(db=Depends(get_db), user=Depends(get_current_user)):
-    cases = db.execute(select(OnboardingCase).order_by(OnboardingCase.created_at.desc())).scalars().all()
+def list_cases(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    db=Depends(get_db),
+    user=Depends(get_current_user),
+):
+    cases = db.execute(
+        select(OnboardingCase)
+        .order_by(OnboardingCase.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    ).scalars().all()
     return [_case_to_dict(c) for c in cases]
 
 
@@ -62,7 +90,11 @@ def get_case(case_id: str, db=Depends(get_db), user=Depends(get_current_user)):
 
 
 @router.post("")
-def create_case(payload: CaseIn, db=Depends(get_db), user=Depends(get_current_user)):
+def create_case(
+    payload: CaseIn,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin", "manager")),
+):
     c = OnboardingCase(
         employee_name=payload.employee_name,
         employee_email=payload.employee_email,
@@ -84,13 +116,17 @@ def create_case(payload: CaseIn, db=Depends(get_db), user=Depends(get_current_us
 
 
 @router.patch("/{case_id}")
-def update_case(case_id: str, payload: dict, db=Depends(get_db), user=Depends(get_current_user)):
+def update_case(
+    case_id: str,
+    payload: CaseUpdate,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin", "manager")),
+):
     c = db.get(OnboardingCase, case_id)
     if not c:
         raise HTTPException(404, "case not found")
-    for k in ["employee_name", "employee_email", "department", "start_date", "manager_name", "manager_email", "status"]:
-        if k in payload:
-            setattr(c, k, payload[k])
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(c, key, value)
     c.updated_at = dt.datetime.now(dt.UTC)
     db.commit()
     audit(user.get("name", "operator"), "case_updated", "case", c.id, f"Updated case {c.employee_name}", c.id)
@@ -98,11 +134,15 @@ def update_case(case_id: str, payload: dict, db=Depends(get_db), user=Depends(ge
 
 
 @router.delete("/{case_id}")
-def delete_case(case_id: str, db=Depends(get_db), user=Depends(get_current_user)):
+def delete_case(
+    case_id: str,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin")),
+):
     c = db.get(OnboardingCase, case_id)
     if not c:
         raise HTTPException(404, "case not found")
     db.delete(c)
     db.commit()
-    audit(user.get("name", "operator"), "case_deleted", "case", case_id, f"Deleted case")
+    audit(user.get("name", "operator"), "case_deleted", "case", case_id, "Deleted case")
     return {"ok": True}

@@ -15,8 +15,11 @@
         <select v-model="status"
           class="linear-input text-xs px-2.5 py-1.5 font-mono">
           <option value="">{{ t('all') }}</option>
-          <option value="not_started">{{ t('not_started') }}</option>
-          <option value="in_progress">{{ t('in_progress') }}</option>
+          <option value="pre_boarding">{{ t('pre_boarding') }}</option>
+          <option value="hardware_ready">{{ t('hardware_ready') }}</option>
+          <option value="accounts_provisioned">{{ t('accounts_provisioned') }}</option>
+          <option value="orientation_complete">{{ t('orientation_complete') }}</option>
+          <option value="first_week_support">{{ t('first_week_support') }}</option>
           <option value="completed">{{ t('completed') }}</option>
         </select>
       </div>

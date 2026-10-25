@@ -3,17 +3,21 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
 from onboardpilot.db.models import OpenItem
-from onboardpilot.deps import get_current_user
+from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
 
 router = APIRouter(prefix="/api", tags=["open-items"])
+
+OpenItemPriority = Literal["low", "medium", "high", "critical"]
+OpenItemStatus = Literal["open", "in_progress", "resolved"]
 
 
 class OpenItemIn(BaseModel):
@@ -22,8 +26,17 @@ class OpenItemIn(BaseModel):
     description: str = ""
     owner: str = "it_admin"
     due_date: str = ""
-    priority: str = "medium"
-    status: str = "open"
+    priority: OpenItemPriority = "medium"
+    status: OpenItemStatus = "open"
+
+
+class OpenItemUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    owner: str | None = None
+    due_date: str | None = None
+    priority: OpenItemPriority | None = None
+    status: OpenItemStatus | None = None
 
 
 def _to_dict(o: OpenItem) -> dict:
@@ -42,15 +55,26 @@ def _to_dict(o: OpenItem) -> dict:
 
 
 @router.get("/open-items")
-def list_open_items(case_id: str | None = None, db=Depends(get_db), user=Depends(get_current_user)):
+def list_open_items(
+    case_id: str | None = None,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    db=Depends(get_db),
+    user=Depends(get_current_user),
+):
     q = select(OpenItem)
     if case_id:
         q = q.where(OpenItem.case_id == case_id)
+    q = q.limit(limit).offset(offset)
     return [_to_dict(o) for o in db.execute(q).scalars().all()]
 
 
 @router.post("/open-items")
-def create_open_item(payload: OpenItemIn, db=Depends(get_db), user=Depends(get_current_user)):
+def create_open_item(
+    payload: OpenItemIn,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin", "manager")),
+):
     o = OpenItem(**payload.model_dump())
     db.add(o)
     db.commit()
@@ -59,14 +83,18 @@ def create_open_item(payload: OpenItemIn, db=Depends(get_db), user=Depends(get_c
 
 
 @router.patch("/open-items/{item_id}")
-def update_open_item(item_id: str, payload: dict, db=Depends(get_db), user=Depends(get_current_user)):
+def update_open_item(
+    item_id: str,
+    payload: OpenItemUpdate,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin", "manager")),
+):
     o = db.get(OpenItem, item_id)
     if not o:
         raise HTTPException(404, "not found")
-    for k in ["title", "description", "owner", "due_date", "priority", "status"]:
-        if k in payload:
-            setattr(o, k, payload[k])
-    if payload.get("status") == "resolved":
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(o, key, value)
+    if payload.status == "resolved":
         o.resolved_at = datetime.now(timezone.utc)
     db.commit()
     audit(user.get("name", "operator"), "open_item_updated", "open_item", o.id, f"{o.title} -> {o.status}", o.case_id)
@@ -74,7 +102,11 @@ def update_open_item(item_id: str, payload: dict, db=Depends(get_db), user=Depen
 
 
 @router.delete("/open-items/{item_id}")
-def delete_open_item(item_id: str, db=Depends(get_db), user=Depends(get_current_user)):
+def delete_open_item(
+    item_id: str,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin")),
+):
     o = db.get(OpenItem, item_id)
     if not o:
         raise HTTPException(404, "not found")

@@ -19,10 +19,7 @@ router = APIRouter(prefix="/public", tags=["public"])
 def _demo_case(db):
     c = db.execute(select(OnboardingCase).where(OnboardingCase.is_public_demo == True)).scalar_one_or_none()  # noqa: E712
     if not c:
-        # fallback first case
-        c = db.execute(select(OnboardingCase)).scalars().first()
-    if not c:
-        raise HTTPException(404, "no demo case")
+        raise HTTPException(404, "no public demo case")
     return c
 
 

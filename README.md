@@ -78,6 +78,10 @@ See docs/api.md. All `/api/*` routes require Bearer token except `/api/auth/logi
 
 Prefer Railway for backend and database; Vercel for frontend if split is clean, otherwise both on Railway. Railway login required from the user before deployment.
 
+## Deployment
+
+See docs/deployment.md for the two-service architecture, variable names, deployment sequence, rollback, and database recovery.
+
 ## Roadmap
 
 - Email notifications (optional, off by default)

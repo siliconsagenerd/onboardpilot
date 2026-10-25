@@ -40,8 +40,7 @@ def summary(db=Depends(get_db), user=Depends(get_current_user)):
                     overdue_items.append(it)
             except Exception:
                 pass
-    blocked_access = [a for a in db.execute(select(AccessRequest)).scalars().all() if a.status == "blocked" or a.status == "requested"]
-    # blocked = requested not progressed? keep requested+ any; spec: blocked access requests. We'll treat 'requested' older? Simpler: status in requested
+    # "Blocked" access requests are pending requests that have not progressed.
     blocked_access = [a for a in db.execute(select(AccessRequest)).scalars().all() if a.status == "requested"]
     open_items = db.execute(select(OpenItem)).scalars().all()
     open_by_owner = {}

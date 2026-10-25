@@ -211,8 +211,8 @@ const { t, locale } = useI18n()
 const auth = useAuth()
 const lang = computed(() => locale.value)
 
-const isAdmin = computed(() => auth.role === 'admin')
-const isManager = computed(() => auth.role === 'manager' || auth.role === 'admin')
+const isAdmin = computed(() => auth.role === 'it_admin')
+const isManager = computed(() => auth.role === 'manager' || auth.role === 'it_admin')
 const canEditChecklist = computed(() => isManager.value)
 
 const caseData = ref<Case | null>(null)

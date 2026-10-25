@@ -8,9 +8,11 @@ services:
     volumes:
       - onboardpilot_data:/app/data
     environment:
-      - SECRET_KEY=change-me-in-production
+      - APP_ENV=development
+      - SECRET_KEY=${SECRET_KEY}
       - OPERATOR_AUTH_REQUIRED=true
-      - DB_URL=sqlite:///./data/onboardpilot.db
+      - DATABASE_URL=sqlite:////app/data/onboardpilot.db
+      - SEED_ON_STARTUP=false
   frontend:
     build:
       context: ./frontend

@@ -2,21 +2,26 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timezone
+from typing import Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
 from onboardpilot.db.models import ChecklistItem, OnboardingCase
-from onboardpilot.deps import get_current_user
+from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
 from onboardpilot.services.workflow import can_complete, recompute_blocked
 
 router = APIRouter(prefix="/api", tags=["checklist"])
 
+ChecklistStatus = Literal["not_started", "in_progress", "completed", "blocked"]
+
 
 class ItemUpdate(BaseModel):
-    status: str | None = None
+    status: ChecklistStatus | None = None
     blocked_reason: str | None = None
 
 
@@ -42,13 +47,30 @@ def _item_to_dict(i: ChecklistItem) -> dict:
 
 
 @router.get("/cases/{case_id}/checklist")
-def get_checklist(case_id: str, db=Depends(get_db), user=Depends(get_current_user)):
-    items = db.execute(select(ChecklistItem).where(ChecklistItem.case_id == case_id).order_by(ChecklistItem.sort_order)).scalars().all()
+def get_checklist(
+    case_id: str,
+    limit: int = Query(500, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    db=Depends(get_db),
+    user=Depends(get_current_user),
+):
+    items = db.execute(
+        select(ChecklistItem)
+        .where(ChecklistItem.case_id == case_id)
+        .order_by(ChecklistItem.sort_order)
+        .limit(limit)
+        .offset(offset)
+    ).scalars().all()
     return [_item_to_dict(i) for i in items]
 
 
 @router.patch("/checklist/{item_id}")
-def update_item(item_id: str, payload: ItemUpdate, db=Depends(get_db), user=Depends(get_current_user)):
+def update_item(
+    item_id: str,
+    payload: ItemUpdate,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin", "manager")),
+):
     item = db.get(ChecklistItem, item_id)
     if not item:
         raise HTTPException(404, "item not found")
@@ -56,14 +78,10 @@ def update_item(item_id: str, payload: ItemUpdate, db=Depends(get_db), user=Depe
     if payload.status == "completed":
         ok, reason = can_complete(item, case_items)
         if not ok:
-            item.status = "blocked"
-            item.blocked_reason = reason
-            db.commit()
-            audit(user.get("name", "operator"), "item_blocked", "checklist", item.id, reason, item.case_id)
             raise HTTPException(400, reason)
         item.status = "completed"
         item.blocked_reason = ""
-        item.completed_at = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
+        item.completed_at = datetime.now(timezone.utc)
         item.completed_by = user.get("name", "operator")
         action = "item_completed"
     elif payload.status:
@@ -71,9 +89,10 @@ def update_item(item_id: str, payload: ItemUpdate, db=Depends(get_db), user=Depe
         item.blocked_reason = payload.blocked_reason or ""
         action = "item_updated"
     else:
+        if payload.blocked_reason is not None:
+            item.blocked_reason = payload.blocked_reason
         action = "item_updated"
     db.flush()
-    # recompute blocked states for siblings
     refreshed = db.execute(select(ChecklistItem).where(ChecklistItem.case_id == item.case_id)).scalars().all()
     recompute_blocked(refreshed)
     db.commit()
@@ -82,7 +101,11 @@ def update_item(item_id: str, payload: ItemUpdate, db=Depends(get_db), user=Depe
 
 
 @router.post("/checklist/{item_id}/reopen")
-def reopen_item(item_id: str, db=Depends(get_db), user=Depends(get_current_user)):
+def reopen_item(
+    item_id: str,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin", "manager")),
+):
     item = db.get(ChecklistItem, item_id)
     if not item:
         raise HTTPException(404, "item not found")

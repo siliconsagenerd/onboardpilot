@@ -1,6 +1,13 @@
 import axios from 'axios'
 
-const base = /*BUILD 2*/ (import.meta as any).env?.VITE_API_BASE_URL || (import.meta as any).env?.VITE_API_BASE || (import.meta.env.PROD ? 'https://sublime-vibrancy-production-3a42.up.railway.app' : 'http://localhost:8000')
+const base =
+  (import.meta as any).env?.VITE_API_BASE_URL ||
+  (import.meta as any).env?.VITE_API_BASE ||
+  (import.meta.env.PROD ? '' : 'http://localhost:8000')
+
+if (import.meta.env.PROD && !((import.meta as any).env?.VITE_API_BASE_URL || (import.meta as any).env?.VITE_API_BASE)) {
+  console.warn('VITE_API_BASE_URL is not set; using same-origin requests')
+}
 
 export const api = axios.create({ baseURL: base })
 

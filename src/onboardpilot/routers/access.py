@@ -3,19 +3,20 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
 from onboardpilot.db.models import AccessRequest, OnboardingCase
-from onboardpilot.deps import get_current_user
+from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
 
 router = APIRouter(prefix="/api", tags=["access"])
 
-VALID_STATUSES = ["requested", "approved", "provisioned", "verified"]
+AccessStatus = Literal["requested", "approved", "provisioned", "verified"]
 
 
 class AccessIn(BaseModel):
@@ -23,6 +24,13 @@ class AccessIn(BaseModel):
     access_type: str
     requester: str = ""
     notes: str = ""
+
+
+class AccessUpdate(BaseModel):
+    status: AccessStatus | None = None
+    notes: str | None = None
+    approver: str | None = None
+    provisioning_owner: str | None = None
 
 
 def _to_dict(a: AccessRequest) -> dict:
@@ -43,15 +51,26 @@ def _to_dict(a: AccessRequest) -> dict:
 
 
 @router.get("/access")
-def list_access(case_id: str | None = None, db=Depends(get_db), user=Depends(get_current_user)):
+def list_access(
+    case_id: str | None = None,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    db=Depends(get_db),
+    user=Depends(get_current_user),
+):
     q = select(AccessRequest)
     if case_id:
         q = q.where(AccessRequest.case_id == case_id)
+    q = q.limit(limit).offset(offset)
     return [_to_dict(a) for a in db.execute(q).scalars().all()]
 
 
 @router.post("/access")
-def create_access(payload: AccessIn, db=Depends(get_db), user=Depends(get_current_user)):
+def create_access(
+    payload: AccessIn,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin", "manager")),
+):
     a = AccessRequest(
         case_id=payload.case_id,
         access_type=payload.access_type,
@@ -61,48 +80,55 @@ def create_access(payload: AccessIn, db=Depends(get_db), user=Depends(get_curren
     )
     db.add(a)
     db.commit()
-    audit(user.get("name", "operator"), "access_requested", "access", a.id, f"Requested {a.access_type}", a.case_id)
+    audit(user.get("name", "operator"), "access_requested", "access", a.id, f"{a.access_type} requested", a.case_id)
     return _to_dict(a)
 
 
 @router.patch("/access/{req_id}")
-def update_access(req_id: str, payload: dict, db=Depends(get_db), user=Depends(get_current_user)):
+def update_access(
+    req_id: str,
+    payload: AccessUpdate,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin", "manager")),
+):
     a = db.get(AccessRequest, req_id)
     if not a:
         raise HTTPException(404, "not found")
-    new_status = payload.get("status")
-    if new_status and new_status in VALID_STATUSES:
-        # enforce order
-        order = VALID_STATUSES
-        ci = order.index(a.status)
-        ni = order.index(new_status)
-        if ni <= ci:
+    statuses = ["requested", "approved", "provisioned", "verified"]
+    if payload.status and payload.status != a.status:
+        ci = statuses.index(a.status)
+        ni = statuses.index(payload.status)
+        if ni < ci:
             raise HTTPException(400, "cannot revert status")
         if ni != ci + 1:
             raise HTTPException(400, "invalid transition: must progress one step at a time")
-        a.status = new_status
+        a.status = payload.status
         now = datetime.now(timezone.utc)
-        if new_status == "approved":
-            a.approver = payload.get("approver", user.get("name", "operator"))
+        if payload.status == "approved":
+            a.approver = payload.approver or user.get("name", "operator")
             a.approved_at = now
-        elif new_status == "provisioned":
-            a.provisioning_owner = payload.get("provisioning_owner", user.get("name", "operator"))
+        elif payload.status == "provisioned":
+            a.provisioning_owner = payload.provisioning_owner or user.get("name", "operator")
             a.provisioned_at = now
-        elif new_status == "verified":
+        elif payload.status == "verified":
             a.verified_at = now
-    if "notes" in payload:
-        a.notes = payload["notes"]
-    if "approver" in payload:
-        a.approver = payload["approver"]
-    if "provisioning_owner" in payload:
-        a.provisioning_owner = payload["provisioning_owner"]
+    if payload.notes is not None:
+        a.notes = payload.notes
+    if payload.approver is not None:
+        a.approver = payload.approver
+    if payload.provisioning_owner is not None:
+        a.provisioning_owner = payload.provisioning_owner
     db.commit()
     audit(user.get("name", "operator"), f"access_{a.status}", "access", a.id, f"{a.access_type} -> {a.status}", a.case_id)
     return _to_dict(a)
 
 
 @router.delete("/access/{req_id}")
-def delete_access(req_id: str, db=Depends(get_db), user=Depends(get_current_user)):
+def delete_access(
+    req_id: str,
+    db=Depends(get_db),
+    user=Depends(require_role("it_admin")),
+):
     a = db.get(AccessRequest, req_id)
     if not a:
         raise HTTPException(404, "not found")
