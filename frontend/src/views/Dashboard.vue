@@ -108,8 +108,6 @@
     <footer class="pt-8 border-t border-[var(--color-line)] text-[10px] font-mono text-[var(--color-muted)] flex flex-wrap gap-x-4 gap-y-1">
       <span>OnboardPilot</span>
       <span>·</span>
-      <span>EUROKEY Software GmbH · Saarbrücken</span>
-      <span>·</span>
       <span>FastAPI · Vue 3 · SQLite · OpenAI/Laya</span>
       <span>·</span>
       <span>Vishrut Pandey · OnboardPilot</span>

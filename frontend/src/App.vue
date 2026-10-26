@@ -4,8 +4,6 @@
       <div class="flex items-center gap-2 flex-wrap">
         <span class="text-[var(--color-accent)] font-bold">Bewerbungsprojekt</span>
         <span>·</span>
-        <span>EUROKEY Software GmbH · Saarbrücken</span>
-        <span>·</span>
         <span>Digital Dispatch</span>
       </div>
       <div class="flex items-center gap-2">
