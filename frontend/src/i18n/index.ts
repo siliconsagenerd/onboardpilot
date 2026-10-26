@@ -253,7 +253,7 @@ const messages = {
 
 const i18n = createI18n({
   legacy: false,
-  locale: localStorage.getItem('lang') || 'de',
+  locale: localStorage.getItem('onboardpilot_locale') || localStorage.getItem('lang') || 'de',
   fallbackLocale: 'en',
   messages,
 })
