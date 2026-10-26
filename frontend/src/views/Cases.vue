@@ -1,9 +1,9 @@
 <template>
   <div class="space-y-4">
     <!-- Header with quick controls -->
-    <div class="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-[var(--color-line)]">
+    <div class="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-[var(--color-line)]">
       <div>
-        <h1 class="text-xl font-semibold tracking-tight text-[var(--color-ink)]">{{ t('cases') }}</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-[var(--color-ink)] display-heading">{{ t('cases') }}</h1>
         <p class="text-xs text-[var(--color-ink-soft)] mt-0.5 font-mono">{{ filtered.length }} {{ t('cases').toLowerCase() }} total</p>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
@@ -31,7 +31,7 @@
     <div v-else class="panel overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-xs">
-          <thead class="bg-[var(--color-canvas-subtle)] border-b border-[var(--color-line)] text-left text-[11px] font-mono text-[var(--color-ink-soft)]">
+          <thead class="bg-[var(--color-canvas-subtle)] border-b border-[var(--color-line)] text-left text-xs font-mono text-[var(--color-ink-soft)]">
             <tr>
               <th scope="col" class="py-2.5 px-4 font-medium">{{ t('employee') }}</th>
               <th scope="col" class="py-2.5 px-4 font-medium">{{ t('role') }}</th>
@@ -52,7 +52,7 @@
               </td>
               <td class="py-3 px-4 text-[var(--color-ink-soft)]">{{ c.role_template }}</td>
               <td class="py-3 px-4 text-[var(--color-ink-soft)]">{{ c.department }}</td>
-              <td class="py-3 px-4 font-mono text-[11px] text-[var(--color-muted)]">{{ c.start_date }}</td>
+              <td class="py-3 px-4 font-mono text-xs text-[var(--color-muted)]">{{ c.start_date }}</td>
               <td class="py-3 px-4">
                 <span class="status-badge" :class="statusBadge(c.status)">
                   <span class="h-1.5 w-1.5 rounded-full" :class="statusDot(c.status)"></span>

@@ -4,11 +4,11 @@
     <div v-else-if="error" class="panel p-4 text-xs font-mono text-[var(--color-rose)] bg-[var(--color-rose-soft)] border-[var(--color-rose)]/30" role="alert">{{ error }}</div>
     <div v-else class="space-y-4">
       <!-- Employee Banner -->
-      <div class="panel p-5 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <div class="flex items-center gap-3 flex-wrap">
-            <span class="text-[var(--color-muted)] font-mono text-xs">#{{ caseData?.id.slice(0, 8) }}</span>
-            <h1 class="text-xl font-semibold tracking-tight text-[var(--color-ink)]">{{ caseData?.employee_name }}</h1>
+      <div class="panel p-5 flex items-center justify-between gap-4 flex-wrap card-accent-top">
+      <div>
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-[var(--color-muted)] font-mono text-xs">#{{ caseData?.id.slice(0, 8) }}</span>
+          <h1 class="text-2xl font-bold tracking-tight text-[var(--color-ink)] display-heading">{{ caseData?.employee_name }}</h1>
             <span class="status-badge" :class="statusBadge(caseData?.status || '')">
               <span class="h-1.5 w-1.5 rounded-full" :class="statusDot(caseData?.status || '')"></span>
               {{ t(caseData?.status || '') || caseData?.status }}
@@ -40,8 +40,8 @@
           <div class="flex items-start justify-between gap-4 flex-wrap">
             <div class="flex-1 min-w-[240px]">
               <div class="text-xs font-medium text-[var(--color-ink)]">{{ lang==='de'?it.title_de:it.title_en }}</div>
-              <div class="text-[11px] text-[var(--color-ink-soft)] mt-0.5">{{ lang==='de'?it.description_de:it.description_en }}</div>
-              <div v-if="it.depends_on?.length" class="text-[11px] text-[var(--color-amber)] mt-1 font-mono">
+              <div class="text-xs text-[var(--color-ink-soft)] mt-0.5">{{ lang==='de'?it.description_de:it.description_en }}</div>
+              <div v-if="it.depends_on?.length" class="text-xs text-[var(--color-amber)] mt-1 font-mono">
                 {{ t('depends_on') }}: {{ getDepTitles(it.depends_on) }}
               </div>
             </div>
@@ -51,7 +51,7 @@
                 {{ t(it.status) || it.status }}
               </span>
               <select v-if="canEditChecklist" @change="updateItem(it, $event)"
-                class="linear-input text-[11px] px-2 py-0.5 font-mono"
+                class="linear-input text-xs px-2 py-0.5 font-mono"
                 :aria-label="t('action')">
                 <option value="">{{ t('action') }}</option>
                 <option value="not_started">{{ t('not_started') }}</option>
@@ -72,11 +72,11 @@
         <div v-for="h in hardware" :key="h.id" class="panel p-3.5 flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div class="text-xs font-medium text-[var(--color-ink)]">{{ h.asset_type }} · {{ h.brand_model || '-' }}</div>
-            <div class="text-[11px] text-[var(--color-ink-soft)] mt-1 font-mono">
+            <div class="text-xs text-[var(--color-ink-soft)] mt-1 font-mono">
               {{ t('serial_number') }}: {{ h.serial_number || '-' }} · {{ t('condition') }}: {{ t('cond_' + h.condition) || h.condition }}
               · {{ h.handover_date ? (t('handover_date') + ': ' + h.handover_date) : t('not_handed_over') }}
             </div>
-            <div v-if="h.notes" class="text-[11px] text-[var(--color-muted)] mt-1">{{ h.notes }}</div>
+            <div v-if="h.notes" class="text-xs text-[var(--color-muted)] mt-1">{{ h.notes }}</div>
           </div>
           <span class="status-badge"
             :class="h.handover_date ? 'bg-[var(--color-emerald-soft)] text-[var(--color-emerald)] border border-[var(--color-emerald)]/30' : 'bg-[var(--color-canvas-subtle)] text-[var(--color-ink-soft)] border border-[var(--color-line)]'">
@@ -87,7 +87,7 @@
         <form v-if="isAdmin" @submit.prevent="submitHandover" class="panel p-4 space-y-3" :aria-label="t('record_handover')">
           <h2 class="text-xs font-semibold uppercase tracking-wider font-mono text-[var(--color-ink-soft)]">{{ t('record_handover') }}</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label class="text-[11px] font-mono text-[var(--color-ink-soft)] flex flex-col gap-1">
+            <label class="text-xs font-mono text-[var(--color-ink-soft)] flex flex-col gap-1">
               {{ t('asset') }}
               <select v-model="handover.asset_id" required
                 class="linear-input text-xs px-2.5 py-1.5 font-sans">
@@ -97,12 +97,14 @@
                 </option>
               </select>
             </label>
-            <label class="text-[11px] font-mono text-[var(--color-ink-soft)] flex flex-col gap-1">
+            <label class="text-xs font-mono text-[var(--color-ink-soft)] flex flex-col gap-1">
               {{ t('handover_date') }}
               <input v-model="handover.handover_date" type="date" required
+                :min="caseData?.start_date || ''"
+                :max="todayISO"
                 class="linear-input text-xs px-2.5 py-1.5 font-mono" />
             </label>
-            <label class="text-[11px] font-mono text-[var(--color-ink-soft)] flex flex-col gap-1">
+            <label class="text-xs font-mono text-[var(--color-ink-soft)] flex flex-col gap-1">
               {{ t('condition') }}
               <select v-model="handover.condition"
                 class="linear-input text-xs px-2.5 py-1.5 font-sans">
@@ -112,7 +114,7 @@
                 <option value="needs_repair">{{ t('cond_needs_repair') }}</option>
               </select>
             </label>
-            <label class="text-[11px] font-mono text-[var(--color-ink-soft)] flex flex-col gap-1">
+            <label class="text-xs font-mono text-[var(--color-ink-soft)] flex flex-col gap-1">
               {{ t('notes') }}
               <input v-model="handover.notes" type="text"
                 class="linear-input text-xs px-2.5 py-1.5 font-sans" />
@@ -120,7 +122,7 @@
           </div>
           <div class="flex items-center gap-3 pt-1">
             <button type="submit" :disabled="handoverBusy"
-              class="px-3.5 py-1.5 text-xs font-medium rounded bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white disabled:opacity-50 transition-colors shadow-xs cursor-pointer">
+              class="px-3.5 py-1.5 text-xs font-medium rounded bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[#ffffff] disabled:opacity-50 transition-colors shadow-xs cursor-pointer">
               {{ handoverBusy ? t('saving') : t('save') }}
             </button>
             <span v-if="handoverMsg" class="text-xs font-mono text-[var(--color-emerald)]" role="status">{{ handoverMsg }}</span>
@@ -135,7 +137,7 @@
         <div v-for="a in access" :key="a.id" class="panel p-3.5 flex items-center justify-between gap-4 flex-wrap">
           <div>
             <div class="text-xs font-medium text-[var(--color-ink)]">{{ a.access_type }}</div>
-            <div class="text-[11px] text-[var(--color-ink-soft)] mt-0.5 font-mono">{{ a.requester }}<template v-if="a.provisioning_owner"> · {{ a.provisioning_owner }}</template></div>
+            <div class="text-xs text-[var(--color-ink-soft)] mt-0.5 font-mono">{{ a.requester }}<template v-if="a.provisioning_owner"> · {{ a.provisioning_owner }}</template></div>
           </div>
           <div class="flex items-center gap-2">
             <span class="status-badge" :class="statusBadge(a.status)">
@@ -166,8 +168,8 @@
         <div v-for="o in openItems" :key="o.id" class="panel p-3.5 flex items-center justify-between gap-4 flex-wrap">
           <div>
             <div class="text-xs font-medium text-[var(--color-ink)]">{{ o.title }}</div>
-            <div class="text-[11px] text-[var(--color-ink-soft)] mt-0.5">{{ o.description }}</div>
-            <div v-if="o.due_date" class="text-[11px] text-[var(--color-muted)] mt-0.5 font-mono">{{ t('due_date') }}: {{ o.due_date }}</div>
+            <div class="text-xs text-[var(--color-ink-soft)] mt-0.5">{{ o.description }}</div>
+            <div v-if="o.due_date" class="text-xs text-[var(--color-muted)] mt-0.5 font-mono">{{ t('due_date') }}: {{ o.due_date }}</div>
           </div>
           <div class="flex items-center gap-2">
             <span class="status-badge" :class="statusBadge(o.status)">
@@ -182,16 +184,22 @@
         </div>
       </div>
 
-      <!-- Audit -->
-      <div v-if="tab==='audit'" class="space-y-2">
+      <!-- History -->
+      <div v-if="tab==='history'" class="space-y-0">
         <div v-if="!audit.length" class="panel p-8 text-center text-xs font-mono text-[var(--color-muted)]">{{ t('no_audit') }}</div>
-        <div v-for="a in audit" :key="a.id" class="panel p-3 text-xs space-y-1">
-          <div class="flex items-baseline justify-between gap-2 flex-wrap">
-            <span class="font-semibold text-[var(--color-ink)] font-mono">{{ a.action }}</span>
-            <span class="text-[var(--color-muted)] font-mono text-[11px]">{{ a.timestamp }}</span>
+        <div v-else class="relative pl-6">
+          <div class="absolute left-2 top-2 bottom-2 w-px bg-[var(--color-line)]"></div>
+          <div v-for="a in audit" :key="a.id" class="relative pb-4 last:pb-0">
+            <div class="absolute -left-4 top-1.5 h-3 w-3 rounded-full border-2 border-[var(--color-accent)] bg-[var(--color-canvas)]"></div>
+            <div class="panel p-3 text-xs space-y-1 ml-2">
+              <div class="flex items-baseline justify-between gap-2 flex-wrap">
+                <span class="font-semibold text-[var(--color-ink)] font-mono">{{ a.action }}</span>
+                <span class="text-[var(--color-muted)] font-mono text-[10px]">{{ new Date(a.timestamp).toLocaleString() }}</span>
+              </div>
+              <div class="text-[var(--color-ink-soft)] text-xs leading-relaxed">{{ a.description }}</div>
+              <div class="text-[var(--color-muted)] font-mono text-[10px]">{{ a.actor }} · {{ a.entity_type }}</div>
+            </div>
           </div>
-          <div class="text-[var(--color-ink-soft)] text-xs">{{ a.description }}</div>
-          <div class="text-[var(--color-muted)] font-mono text-[10px]">{{ a.actor }} · {{ a.entity_type }}</div>
         </div>
       </div>
     </div>
@@ -221,14 +229,14 @@ const hardware = ref<Hardware[]>([])
 const access = ref<AccessReq[]>([])
 const openItems = ref<OpenItem[]>([])
 const audit = ref<AuditEntry[]>([])
+const todayISO = new Date().toISOString().slice(0, 10)
 const loading = ref(true)
 const error = ref('')
 const tab = ref('checklist')
-const tabs = ['checklist', 'hardware', 'access', 'open_items', 'audit']
-
-const handoverBusy = ref(false)
+const tabs = ['checklist', 'hardware', 'access', 'open_items', 'history']
 const handoverMsg = ref('')
 const handoverErr = ref('')
+const handoverBusy = ref(false)
 const handover = reactive({ asset_id: '', handover_date: '', condition: 'new', notes: '' })
 
 const cid = route.params.id as string
@@ -315,12 +323,27 @@ async function submitHandover() {
     handoverBusy.value = false
     return
   }
+  // validate date
+  if (!handover.handover_date) {
+    handoverErr.value = t('handover_date') + ' required'
+    handoverBusy.value = false
+    return
+  }
+  const d = new Date(handover.handover_date)
+  const today = new Date(todayISO)
+  const start = caseData.value?.start_date ? new Date(caseData.value.start_date) : null
+  if (d > today) {
+    handoverErr.value = 'Handover date cannot be in the future'
+    handoverBusy.value = false
+    return
+  }
+  if (start && d < start) {
+    handoverErr.value = 'Handover date cannot be before start date'
+    handoverBusy.value = false
+    return
+  }
   try {
-    await api.post('/api/hardware', {
-      case_id: cid,
-      asset_type: asset.asset_type,
-      brand_model: asset.brand_model,
-      serial_number: asset.serial_number,
+    await api.patch(`/api/hardware/${asset.id}`, {
       handover_date: handover.handover_date,
       condition: handover.condition,
       assigned_employee: caseData.value?.employee_name || '',

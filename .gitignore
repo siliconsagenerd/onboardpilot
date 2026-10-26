@@ -12,3 +12,6 @@ __pycache__/
 dist/
 .env*
 .memory-symlink-target.bak
+
+# macOS AppleDouble resource forks (SMB mount artifacts)
+._*

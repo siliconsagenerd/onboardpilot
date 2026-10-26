@@ -219,6 +219,8 @@ def _seed_cases(db) -> None:
                          condition="good", handover_date=c4.start_date, assigned_employee="David Beispiel"))
     db.add(HardwareAsset(case_id=c4.id, asset_type="headset", brand_model="Jabra Evolve", serial_number="SN-DAVID-002",
                          condition="new", handover_date=c4.start_date, assigned_employee="David Beispiel"))
+    db.add(HardwareAsset(case_id=c4.id, asset_type="monitor", brand_model="Dell 24\"", serial_number="SN-DAVID-003",
+                         condition="new", assigned_employee=""))
     for at, st in [("email", "verified"), ("crm", "provisioned"), ("shared_drive", "approved")]:
         ar = AccessRequest(case_id=c4.id, access_type=at, status=st, requester="seed", approver="admin", provisioning_owner="admin")
         ar.requested_at = dt.datetime.now(dt.UTC)
@@ -233,6 +235,105 @@ def _seed_cases(db) -> None:
                     owner="manager", due_date=(today + dt.timedelta(days=5)).isoformat(), priority="medium", status="open"))
     db.add(AuditLog(case_id=c4.id, actor="seed", action="case_created", entity_type="case", entity_id=c4.id,
                     description="Created onboarding case for David Beispiel"))
+
+    # Bulk demo cases (50 total mix)
+    _seed_bulk_cases(db, today, monday)
+
+
+def _seed_bulk_cases(db, today, monday):
+    import random
+    random.seed(42)
+    first_names = ["Lukas", "Sophie", "Maximilian", "Laura", "Felix", "Hannah", "Leon", "Mia", "Paul", "Emma",
+                   "Jonas", "Lena", "Tim", "Anna", "Niklas", "Sarah", "Moritz", "Julia", "David", "Marie",
+                   "Tobias", "Lisa", "Jan", "Katharina", "Florian", "Nina", "Sebastian", "Clara", "Markus", "Franziska"]
+    last_names = ["Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz",
+                  "Hoffmann", "Schäfer", "Koch", "Bauer", "Richter", "Klein", "Wolf", "Schröder", "Neumann",
+                  "Schwarz", "Zimmermann", "Braun", "Krüger", "Hofmann", "Hartmann", "Lange", "Schmitt",
+                  "Werner", "Krause", "Meier", "Lehmann"]
+    roles = ["developer", "office_hr", "sales", "manager"]
+    depts = {"developer": "Engineering", "office_hr": "Human Resources", "sales": "Sales", "manager": "Operations"}
+    statuses = ["pre_boarding", "hardware_ready", "accounts_provisioned", "orientation_complete",
+                "first_week_support", "completed"]
+    access_types = ["email", "vpn", "m365_teams", "git_tools", "crm", "shared_drive", "hr_system"]
+    hardware_items = [("laptop", "ThinkPad X1", "SN"), ("monitor", "Dell 24\"", "SN"), ("headset", "Jabra Evolve", "SN")]
+    idx = 0
+    for i in range(46):
+        fn = first_names[i % len(first_names)]
+        ln = last_names[i % len(last_names)]
+        name = f"{fn} {ln}"
+        role = roles[i % len(roles)]
+        dept = depts[role]
+        # spread start dates: some past, some upcoming
+        days_offset = (i % 7) - 3  # -3..3
+        if i % 5 == 0:
+            start = monday + dt.timedelta(days=(i % 4) + 1)
+        else:
+            start = today + dt.timedelta(days=days_offset)
+        status = statuses[i % len(statuses)]
+        # completed cases get more completed items
+        c = OnboardingCase(
+            employee_name=name,
+            employee_email=f"{fn.lower()}.{ln.lower()}@demo.local",
+            role_template=role,
+            department=dept,
+            start_date=start.isoformat(),
+            manager_name="David Beispiel",
+            manager_email="david.beispiel@demo.local",
+            status=status,
+            created_by="seed",
+        )
+        db.add(c)
+        db.flush()
+        items = generate_checklist_items(c.id, role, c.start_date)
+        for it in items:
+            ci = ChecklistItem(**it)
+            if status in ("completed", "first_week_support", "orientation_complete"):
+                if it["sort_order"] <= len(items) * 0.7:
+                    ci.status = "completed"
+                    ci.completed_by = "seed"
+                    ci.completed_at = dt.datetime.now(dt.UTC)
+            elif status in ("accounts_provisioned", "hardware_ready"):
+                if it["sort_order"] <= len(items) * 0.4:
+                    ci.status = "completed"
+                    ci.completed_by = "seed"
+                    ci.completed_at = dt.datetime.now(dt.UTC)
+            db.add(ci)
+        # hardware: 1-2 items, some handed over
+        for j, (at, bm, prefix) in enumerate(hardware_items[: (i % 2) + 1]):
+            handover = c.start_date if (j == 0 and status not in ("pre_boarding",)) else None
+            db.add(HardwareAsset(
+                case_id=c.id, asset_type=at, brand_model=bm,
+                serial_number=f"{prefix}-{name.split()[1].upper()[:4]}-{j+1:03d}",
+                condition="new",
+                handover_date=handover,
+                assigned_employee=name if handover else "",
+            ))
+        # access requests: 2-3, varied statuses
+        for at in access_types[: (i % 3) + 2]:
+            st = "requested"
+            if status in ("completed", "first_week_support"):
+                st = "verified" if at in ("email", "vpn") else "provisioned"
+            elif status in ("accounts_provisioned", "orientation_complete"):
+                st = "approved" if at in ("email",) else "requested"
+            elif status == "hardware_ready":
+                st = "requested"
+            ar = AccessRequest(case_id=c.id, access_type=at, status=st, requester="seed",
+                               approver="admin", provisioning_owner="admin")
+            ar.requested_at = dt.datetime.now(dt.UTC)
+            if st in ("approved", "provisioned", "verified"):
+                ar.approved_at = dt.datetime.now(dt.UTC)
+            if st in ("provisioned", "verified"):
+                ar.provisioned_at = dt.datetime.now(dt.UTC)
+            if st == "verified":
+                ar.verified_at = dt.datetime.now(dt.UTC)
+            db.add(ar)
+        # open item for some
+        if i % 3 == 0:
+            db.add(OpenItem(case_id=c.id, title="Follow-up task", description="Pending follow-up",
+                            owner="it_admin", due_date=(today + dt.timedelta(days=3)).isoformat(),
+                            priority="medium", status="open"))
+        db.add(AuditLog(case_id=c.id, actor="seed", action="case_created", entity_type="case",
+                        entity_id=c.id, description=f"Created onboarding case for {name}"))
 
 
 if __name__ == "__main__":

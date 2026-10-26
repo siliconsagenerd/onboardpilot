@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date as _date
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -106,7 +106,16 @@ def update_hardware(
     h = db.get(HardwareAsset, asset_id)
     if not h:
         raise HTTPException(404, "not found")
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    data = payload.model_dump(exclude_unset=True)
+    # validate handover_date if present
+    if "handover_date" in data and data["handover_date"]:
+        try:
+            d = _date.fromisoformat(data["handover_date"])
+        except ValueError:
+            raise HTTPException(400, "invalid handover_date format (expected YYYY-MM-DD)")
+        if d > _date.today():
+            raise HTTPException(400, "handover_date cannot be in the future")
+    for key, value in data.items():
         setattr(h, key, value)
     db.commit()
     return _to_dict(h)

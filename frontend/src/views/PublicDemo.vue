@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-4">
-    <div class="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-[var(--color-line)]">
+    <div class="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-[var(--color-line)]">
       <div>
-        <h1 class="text-xl font-semibold tracking-tight text-[var(--color-ink)]">{{ t('public_demo') }}</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-[var(--color-ink)] display-heading">{{ t('public_demo') }}</h1>
         <p class="text-xs text-[var(--color-ink-soft)] mt-0.5 font-mono">{{ t('public_demo_desc') }}</p>
       </div>
       <div class="flex items-center gap-2">

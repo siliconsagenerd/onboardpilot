@@ -1,15 +1,24 @@
 <template>
   <div class="space-y-4">
-    <div class="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-[var(--color-line)]">
+    <div class="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-[var(--color-line)]">
       <div>
-        <h1 class="text-xl font-semibold tracking-tight text-[var(--color-ink)]">{{ t('guides') }}</h1>
-        <p class="text-xs text-[var(--color-ink-soft)] mt-0.5 font-mono">{{ filtered.length }} {{ t('guides').toLowerCase() }} available</p>
+        <h1 class="text-2xl font-bold tracking-tight text-[var(--color-ink)] display-heading">{{ t('guides') }}</h1>
+        <p class="text-xs text-[var(--color-ink-soft)] mt-0.5 font-mono">{{ filtered.length }} {{ t('guides').toLowerCase() }} available · searchable knowledge base · click a category to filter</p>
       </div>
       <div class="relative">
         <input v-model="q" :placeholder="t('search')"
           class="linear-input text-xs px-3 py-1.5 w-full sm:w-64 placeholder-[var(--color-muted)]" />
         <span class="absolute right-2.5 top-1.5 kbd">/</span>
       </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <button v-for="cat in categories" :key="cat"
+        @click="activeCat = activeCat===cat ? '' : cat"
+        class="px-2.5 py-1 text-xs rounded border transition-colors"
+        :class="activeCat===cat ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)] border-[var(--color-accent)]/30' : 'border-[var(--color-line)] text-[var(--color-ink-soft)] hover:border-[var(--color-line-strong)]'">
+        {{ cat }}
+      </button>
     </div>
 
     <div v-if="loading" class="panel p-8 text-center text-xs font-mono text-[var(--color-ink-soft)]">{{ t('loading') }}</div>
@@ -44,8 +53,12 @@ const lang = computed(() => locale.value)
 const guides = ref<Guide[]>([])
 const loading = ref(true)
 const q = ref('')
+const activeCat = ref('')
+
+const categories = computed(() => [...new Set(guides.value.map(g => g.category))])
 
 const filtered = computed(() => guides.value.filter(g => {
+  if (activeCat.value && g.category !== activeCat.value) return false
   if (!q.value) return true
   const query = q.value.toLowerCase()
   const title = (lang.value === 'de' ? g.title_de : g.title_en).toLowerCase()

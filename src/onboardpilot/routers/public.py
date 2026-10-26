@@ -13,7 +13,7 @@ from onboardpilot.routers.hardware import _to_dict as hw_to_dict
 from onboardpilot.routers.access import _to_dict as acc_to_dict
 from onboardpilot.routers.open_items import _to_dict as oi_to_dict
 
-router = APIRouter(prefix="/public", tags=["public"])
+router = APIRouter(prefix="/api/public", tags=["public"])
 
 
 def _demo_case(db):
