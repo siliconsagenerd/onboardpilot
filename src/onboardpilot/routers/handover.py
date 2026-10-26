@@ -6,9 +6,8 @@ import io
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
-
 from fpdf import FPDF
+from sqlalchemy import select
 
 from onboardpilot.db import get_db
 from onboardpilot.db.models import AccessRequest, ChecklistItem, HardwareAsset, OnboardingCase, OpenItem
@@ -35,7 +34,12 @@ def build_pdf(case, items, hardware, access, open_items) -> bytes:
     pdf.cell(0, 8, "Hardware", ln=True)
     pdf.set_font("Helvetica", "", 10)
     for h in hardware:
-        pdf.cell(0, 6, f"- {h.asset_type}: {h.brand_model} (SN: {h.serial_number}) - {h.handover_date} - {h.return_status}", ln=True)
+        pdf.cell(
+            0,
+            6,
+            f"- {h.asset_type}: {h.brand_model} (SN: {h.serial_number}) - {h.handover_date} - {h.return_status}",
+            ln=True,
+        )
     if not hardware:
         pdf.cell(0, 6, "- none", ln=True)
     pdf.ln(2)
@@ -75,9 +79,17 @@ def handover_pdf(case_id: str, db=Depends(get_db), user=Depends(get_current_user
     case = db.get(OnboardingCase, case_id)
     if not case:
         raise HTTPException(404, "not found")
-    items = db.execute(select(ChecklistItem).where(ChecklistItem.case_id == case_id).order_by(ChecklistItem.sort_order)).scalars().all()
+    items = (
+        db.execute(select(ChecklistItem).where(ChecklistItem.case_id == case_id).order_by(ChecklistItem.sort_order))
+        .scalars()
+        .all()
+    )
     hardware = db.execute(select(HardwareAsset).where(HardwareAsset.case_id == case_id)).scalars().all()
     access = db.execute(select(AccessRequest).where(AccessRequest.case_id == case_id)).scalars().all()
     open_items = db.execute(select(OpenItem).where(OpenItem.case_id == case_id)).scalars().all()
     data = build_pdf(case, items, hardware, access, open_items)
-    return StreamingResponse(io.BytesIO(data), media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=handover-{case_id}.pdf"})
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=handover-{case_id}.pdf"},
+    )

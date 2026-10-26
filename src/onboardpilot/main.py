@@ -8,8 +8,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from onboardpilot.config import settings
 from onboardpilot.db import engine
 from onboardpilot.db.models import Base
-
-from onboardpilot.routers import auth, cases, checklist, hardware, access, open_items, audit, guides, dashboard, templates, handover, public
+from onboardpilot.routers import (
+    access,
+    audit,
+    auth,
+    cases,
+    checklist,
+    dashboard,
+    guides,
+    handover,
+    hardware,
+    open_items,
+    public,
+    templates,
+)
 
 app = FastAPI(title="OnboardPilot", version="0.1.0")
 
@@ -30,6 +42,7 @@ def startup():
     if settings.seed_on_startup:
         try:
             from onboardpilot.services.seed import seed_if_empty
+
             seed_if_empty()
         except Exception as e:
             print("seed error:", e)

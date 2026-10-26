@@ -1,7 +1,5 @@
 """Tests for checklist dependency enforcement."""
 
-import pytest
-
 
 def admin_token(client):
     return client.post("/api/auth/login", json={"username": "admin", "password": "Admin123!"}).json()["access_token"]
@@ -10,7 +8,11 @@ def admin_token(client):
 def test_blocked_completion(client):
     tok = admin_token(client)
     h = {"Authorization": f"Bearer {tok}"}
-    c = client.post("/api/cases", json={"employee_name": "Blocked Test", "role_template": "developer", "start_date": "2026-10-20"}, headers=h).json()
+    c = client.post(
+        "/api/cases",
+        json={"employee_name": "Blocked Test", "role_template": "developer", "start_date": "2026-10-20"},
+        headers=h,
+    ).json()
     cid = c["id"]
     items = client.get(f"/api/cases/{cid}/checklist", headers=h).json()
     monitor = [i for i in items if i["key"] == "monitor"][0]
@@ -24,7 +26,11 @@ def test_dependency_order_completion(client):
     tok = admin_token(client)
     h = {"Authorization": f"Bearer {tok}"}
     # create a fresh case
-    c = client.post("/api/cases", json={"employee_name": "Dep Test", "role_template": "developer", "start_date": "2026-10-20"}, headers=h).json()
+    c = client.post(
+        "/api/cases",
+        json={"employee_name": "Dep Test", "role_template": "developer", "start_date": "2026-10-20"},
+        headers=h,
+    ).json()
     cid = c["id"]
     items = client.get(f"/api/cases/{cid}/checklist", headers=h).json()
     # laptop has no deps, complete it

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
-from onboardpilot.db.models import ChecklistItem, OnboardingCase
+from onboardpilot.db.models import ChecklistItem
 from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
 from onboardpilot.services.workflow import can_complete, recompute_blocked
@@ -54,13 +54,17 @@ def get_checklist(
     db=Depends(get_db),
     user=Depends(get_current_user),
 ):
-    items = db.execute(
-        select(ChecklistItem)
-        .where(ChecklistItem.case_id == case_id)
-        .order_by(ChecklistItem.sort_order)
-        .limit(limit)
-        .offset(offset)
-    ).scalars().all()
+    items = (
+        db.execute(
+            select(ChecklistItem)
+            .where(ChecklistItem.case_id == case_id)
+            .order_by(ChecklistItem.sort_order)
+            .limit(limit)
+            .offset(offset)
+        )
+        .scalars()
+        .all()
+    )
     return [_item_to_dict(i) for i in items]
 
 
@@ -81,7 +85,7 @@ def update_item(
             raise HTTPException(400, reason)
         item.status = "completed"
         item.blocked_reason = ""
-        item.completed_at = datetime.now(timezone.utc)
+        item.completed_at = datetime.now(UTC)
         item.completed_by = user.get("name", "operator")
         action = "item_completed"
     elif payload.status:
@@ -117,5 +121,7 @@ def reopen_item(
     refreshed = db.execute(select(ChecklistItem).where(ChecklistItem.case_id == item.case_id)).scalars().all()
     recompute_blocked(refreshed)
     db.commit()
-    audit(user.get("name", "operator"), "item_reopened", "checklist", item.id, f"Reopened {item.title_en}", item.case_id)
+    audit(
+        user.get("name", "operator"), "item_reopened", "checklist", item.id, f"Reopened {item.title_en}", item.case_id
+    )
     return _item_to_dict(item)

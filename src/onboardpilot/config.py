@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import ConfigDict, model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     @model_validator(mode="after")
-    def validate_security(self) -> "Settings":
+    def validate_security(self) -> Settings:
         if self.app_env != "development":
             if not self.secret_key or self.secret_key == "change-me-in-production-please-use-env":
                 raise ValueError("SECRET_KEY must be set to a non-default value outside development")

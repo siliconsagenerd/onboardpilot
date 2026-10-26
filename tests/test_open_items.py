@@ -1,5 +1,6 @@
 """Tests for open items and audit trail."""
 
+
 def admin_token(client):
     return client.post("/api/auth/login", json={"username": "admin", "password": "Admin123!"}).json()["access_token"]
 
@@ -9,7 +10,11 @@ def test_open_item_create_and_resolve(client):
     h = {"Authorization": f"Bearer {tok}"}
     cases = client.get("/api/cases", headers=h).json()
     cid = cases[0]["id"]
-    r = client.post("/api/open-items", json={"case_id": cid, "title": "Test item", "owner": "it_admin", "priority": "high"}, headers=h)
+    r = client.post(
+        "/api/open-items",
+        json={"case_id": cid, "title": "Test item", "owner": "it_admin", "priority": "high"},
+        headers=h,
+    )
     assert r.status_code == 200
     oid = r.json()["id"]
     r = client.patch(f"/api/open-items/{oid}", json={"status": "resolved"}, headers=h)
@@ -23,7 +28,11 @@ def test_audit_entries_created(client):
     tok = admin_token(client)
     h = {"Authorization": f"Bearer {tok}"}
     before = client.get("/api/audit", headers=h).json()
-    c = client.post("/api/cases", json={"employee_name": "Audit Test", "role_template": "developer", "start_date": "2026-10-20"}, headers=h).json()
+    c = client.post(
+        "/api/cases",
+        json={"employee_name": "Audit Test", "role_template": "developer", "start_date": "2026-10-20"},
+        headers=h,
+    ).json()
     after = client.get("/api/audit", headers=h).json()
     assert len(after) > len(before)
     actions = [a["action"] for a in after]

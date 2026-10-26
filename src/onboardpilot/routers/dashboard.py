@@ -59,7 +59,9 @@ def summary(db=Depends(get_db), user=Depends(get_current_user)):
         "total_cases": len(cases),
         "incomplete_cases": len(incomplete),
         "completed_cases": len(cases) - len(incomplete),
-        "upcoming_starters": [{"id": c.id, "name": c.employee_name, "start_date": c.start_date, "role": c.role_template} for c in upcoming],
+        "upcoming_starters": [
+            {"id": c.id, "name": c.employee_name, "start_date": c.start_date, "role": c.role_template} for c in upcoming
+        ],
         "overdue_items_count": len(overdue_items),
         "blocked_access_count": len(blocked_access),
         "open_items_by_owner": open_by_owner,

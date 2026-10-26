@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone, date as _date
+from datetime import UTC, datetime
+from datetime import date as _date
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,7 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
-from onboardpilot.db.models import ChecklistItem, HardwareAsset, OnboardingCase
+from onboardpilot.db.models import ChecklistItem, HardwareAsset
 from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
 
@@ -89,10 +90,17 @@ def create_hardware(
         for it in items:
             if it.key == payload.asset_type and it.status in ("not_started", "in_progress", "blocked"):
                 it.status = "completed"
-                it.completed_at = datetime.now(timezone.utc)
+                it.completed_at = datetime.now(UTC)
                 it.completed_by = user.get("name", "operator")
     db.commit()
-    audit(user.get("name", "operator"), "hardware_assigned", "hardware", h.id, f"Assigned {h.asset_type} {h.brand_model}", h.case_id)
+    audit(
+        user.get("name", "operator"),
+        "hardware_assigned",
+        "hardware",
+        h.id,
+        f"Assigned {h.asset_type} {h.brand_model}",
+        h.case_id,
+    )
     return _to_dict(h)
 
 
@@ -111,8 +119,8 @@ def update_hardware(
     if "handover_date" in data and data["handover_date"]:
         try:
             d = _date.fromisoformat(data["handover_date"])
-        except ValueError:
-            raise HTTPException(400, "invalid handover_date format (expected YYYY-MM-DD)")
+        except ValueError as exc:
+            raise HTTPException(400, "invalid handover_date format (expected YYYY-MM-DD)") from exc
         if d > _date.today():
             raise HTTPException(400, "handover_date cannot be in the future")
     for key, value in data.items():

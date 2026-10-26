@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
-from onboardpilot.db.models import AccessRequest, OnboardingCase
+from onboardpilot.db.models import AccessRequest
 from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
 
@@ -103,7 +103,7 @@ def update_access(
         if ni != ci + 1:
             raise HTTPException(400, "invalid transition: must progress one step at a time")
         a.status = payload.status
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if payload.status == "approved":
             a.approver = payload.approver or user.get("name", "operator")
             a.approved_at = now
@@ -119,7 +119,9 @@ def update_access(
     if payload.provisioning_owner is not None:
         a.provisioning_owner = payload.provisioning_owner
     db.commit()
-    audit(user.get("name", "operator"), f"access_{a.status}", "access", a.id, f"{a.access_type} -> {a.status}", a.case_id)
+    audit(
+        user.get("name", "operator"), f"access_{a.status}", "access", a.id, f"{a.access_type} -> {a.status}", a.case_id
+    )
     return _to_dict(a)
 
 

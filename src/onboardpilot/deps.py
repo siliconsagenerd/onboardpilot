@@ -27,4 +27,5 @@ def require_role(*roles):
         if user.get("role") not in roles and user.get("role") != "it_admin":
             raise HTTPException(status_code=403, detail="forbidden")
         return user
+
     return dep

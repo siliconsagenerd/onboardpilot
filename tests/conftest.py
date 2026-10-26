@@ -12,8 +12,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from onboardpilot.db.models import Base
 from onboardpilot.db import get_db
+from onboardpilot.db.models import Base
 from onboardpilot.main import app
 from onboardpilot.services.seed import seed_if_empty
 
@@ -42,10 +42,10 @@ def db_session():
 def client(db_session):
     session, engine, path = db_session
     # seed
-    from onboardpilot.db import SessionLocal as _SL
     # override SessionLocal temporarily
     import onboardpilot.db as dbmod
     import onboardpilot.services.seed as seedmod
+
     orig_db = dbmod.SessionLocal
     orig_seed = seedmod.SessionLocal
     new_sessionmaker = sessionmaker(bind=engine, autoflush=False, autocommit=False)

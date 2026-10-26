@@ -6,11 +6,11 @@ import datetime as dt
 import uuid
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     ForeignKey,
     Integer,
-    JSON,
     String,
     Text,
 )
@@ -57,11 +57,11 @@ class OnboardingCase(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
     updated_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
-    checklist_items: Mapped[list["ChecklistItem"]] = relationship(back_populates="case", cascade="all, delete-orphan")
-    hardware: Mapped[list["HardwareAsset"]] = relationship(back_populates="case", cascade="all, delete-orphan")
-    access_requests: Mapped[list["AccessRequest"]] = relationship(back_populates="case", cascade="all, delete-orphan")
-    open_items: Mapped[list["OpenItem"]] = relationship(back_populates="case", cascade="all, delete-orphan")
-    audit_entries: Mapped[list["AuditLog"]] = relationship(back_populates="case", cascade="all, delete-orphan")
+    checklist_items: Mapped[list[ChecklistItem]] = relationship(back_populates="case", cascade="all, delete-orphan")
+    hardware: Mapped[list[HardwareAsset]] = relationship(back_populates="case", cascade="all, delete-orphan")
+    access_requests: Mapped[list[AccessRequest]] = relationship(back_populates="case", cascade="all, delete-orphan")
+    open_items: Mapped[list[OpenItem]] = relationship(back_populates="case", cascade="all, delete-orphan")
+    audit_entries: Mapped[list[AuditLog]] = relationship(back_populates="case", cascade="all, delete-orphan")
 
 
 class ChecklistItem(Base):
@@ -84,13 +84,15 @@ class ChecklistItem(Base):
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
-    case: Mapped["OnboardingCase"] = relationship(back_populates="checklist_items")
+    case: Mapped[OnboardingCase] = relationship(back_populates="checklist_items")
 
 
 class HardwareAsset(Base):
     __tablename__ = "hardware_assets"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    case_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("onboarding_cases.id", ondelete="SET NULL"), nullable=True)
+    case_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("onboarding_cases.id", ondelete="SET NULL"), nullable=True
+    )
     asset_type: Mapped[str] = mapped_column(String(60))  # laptop/monitor/dock/headset/phone/accessory
     brand_model: Mapped[str] = mapped_column(String(200), default="")
     serial_number: Mapped[str] = mapped_column(String(200), default="")
@@ -101,7 +103,7 @@ class HardwareAsset(Base):
     notes: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
-    case: Mapped["OnboardingCase | None"] = relationship(back_populates="hardware")
+    case: Mapped[OnboardingCase | None] = relationship(back_populates="hardware")
 
 
 class AccessRequest(Base):
@@ -119,13 +121,15 @@ class AccessRequest(Base):
     verified_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[str] = mapped_column(Text, default="")
 
-    case: Mapped["OnboardingCase"] = relationship(back_populates="access_requests")
+    case: Mapped[OnboardingCase] = relationship(back_populates="access_requests")
 
 
 class OpenItem(Base):
     __tablename__ = "open_items"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    case_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("onboarding_cases.id", ondelete="CASCADE"), nullable=True)
+    case_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("onboarding_cases.id", ondelete="CASCADE"), nullable=True
+    )
     title: Mapped[str] = mapped_column(String(300))
     description: Mapped[str] = mapped_column(Text, default="")
     owner: Mapped[str] = mapped_column(String(80), default="it_admin")
@@ -135,13 +139,15 @@ class OpenItem(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
     resolved_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    case: Mapped["OnboardingCase | None"] = relationship(back_populates="open_items")
+    case: Mapped[OnboardingCase | None] = relationship(back_populates="open_items")
 
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    case_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("onboarding_cases.id", ondelete="CASCADE"), nullable=True)
+    case_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("onboarding_cases.id", ondelete="CASCADE"), nullable=True
+    )
     actor: Mapped[str] = mapped_column(String(80), default="system")
     action: Mapped[str] = mapped_column(String(80))
     entity_type: Mapped[str] = mapped_column(String(60))
@@ -149,7 +155,7 @@ class AuditLog(Base):
     description: Mapped[str] = mapped_column(Text)
     timestamp: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
-    case: Mapped["OnboardingCase | None"] = relationship(back_populates="audit_entries")
+    case: Mapped[OnboardingCase | None] = relationship(back_populates="audit_entries")
 
 
 class Guide(Base):

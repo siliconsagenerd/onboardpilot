@@ -1,7 +1,5 @@
 """Tests for authentication and access control."""
 
-import pytest
-
 
 def login(client, username="admin", password="Admin123!"):
     return client.post("/api/auth/login", json={"username": username, "password": password})

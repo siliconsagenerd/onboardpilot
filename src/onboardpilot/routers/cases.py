@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
-from onboardpilot.db.models import AuditLog, ChecklistItem, OnboardingCase
+from onboardpilot.db.models import ChecklistItem, OnboardingCase
 from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
 from onboardpilot.services.templates import generate_checklist_items
@@ -72,12 +72,11 @@ def list_cases(
     db=Depends(get_db),
     user=Depends(get_current_user),
 ):
-    cases = db.execute(
-        select(OnboardingCase)
-        .order_by(OnboardingCase.created_at.desc())
-        .limit(limit)
-        .offset(offset)
-    ).scalars().all()
+    cases = (
+        db.execute(select(OnboardingCase).order_by(OnboardingCase.created_at.desc()).limit(limit).offset(offset))
+        .scalars()
+        .all()
+    )
     return [_case_to_dict(c) for c in cases]
 
 
@@ -111,7 +110,14 @@ def create_case(
     for item in generate_checklist_items(c.id, payload.role_template, payload.start_date):
         db.add(ChecklistItem(**item))
     db.commit()
-    audit(user.get("name", "operator"), "case_created", "case", c.id, f"Created onboarding case for {c.employee_name}", c.id)
+    audit(
+        user.get("name", "operator"),
+        "case_created",
+        "case",
+        c.id,
+        f"Created onboarding case for {c.employee_name}",
+        c.id,
+    )
     return _case_to_dict(c)
 
 

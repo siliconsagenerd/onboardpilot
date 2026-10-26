@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select
-
 from onboardpilot.db.models import ChecklistItem
 
 
@@ -13,7 +11,7 @@ def dependency_status_map(case_items: list[ChecklistItem]) -> dict[str, Checklis
 
 def can_complete(item: ChecklistItem, case_items: list[ChecklistItem]) -> tuple[bool, str]:
     by_key = dependency_status_map(case_items)
-    for dep_key in (item.depends_on or []):
+    for dep_key in item.depends_on or []:
         dep = by_key.get(dep_key)
         if dep is None:
             continue
@@ -29,7 +27,7 @@ def recompute_blocked(items: list[ChecklistItem]) -> None:
             continue
         blocked = False
         reason = ""
-        for dep_key in (it.depends_on or []):
+        for dep_key in it.depends_on or []:
             dep = by_key.get(dep_key)
             if dep is not None and dep.status != "completed":
                 blocked = True

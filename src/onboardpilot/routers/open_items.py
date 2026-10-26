@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -78,7 +78,9 @@ def create_open_item(
     o = OpenItem(**payload.model_dump())
     db.add(o)
     db.commit()
-    audit(user.get("name", "operator"), "open_item_created", "open_item", o.id, f"Created open item: {o.title}", o.case_id)
+    audit(
+        user.get("name", "operator"), "open_item_created", "open_item", o.id, f"Created open item: {o.title}", o.case_id
+    )
     return _to_dict(o)
 
 
@@ -95,7 +97,7 @@ def update_open_item(
     for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(o, key, value)
     if payload.status == "resolved":
-        o.resolved_at = datetime.now(timezone.utc)
+        o.resolved_at = datetime.now(UTC)
     db.commit()
     audit(user.get("name", "operator"), "open_item_updated", "open_item", o.id, f"{o.title} -> {o.status}", o.case_id)
     return _to_dict(o)

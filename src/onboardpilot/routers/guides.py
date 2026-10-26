@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
 from onboardpilot.db.models import Guide
-from onboardpilot.deps import get_current_user
 
 router = APIRouter(prefix="/api/guides", tags=["guides"])
 

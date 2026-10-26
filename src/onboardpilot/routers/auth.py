@@ -27,7 +27,13 @@ def login(payload: LoginIn, db=Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=403, detail="inactive")
     token = create_access_token(user.id, user.role, user.full_name)
-    return {"access_token": token, "token_type": "bearer", "role": user.role, "name": user.full_name, "username": user.username}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "role": user.role,
+        "name": user.full_name,
+        "username": user.username,
+    }
 
 
 @router.get("/me")

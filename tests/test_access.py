@@ -1,5 +1,6 @@
 """Tests for access-request state machine."""
 
+
 def admin_token(client):
     return client.post("/api/auth/login", json={"username": "admin", "password": "Admin123!"}).json()["access_token"]
 
