@@ -8,21 +8,21 @@
         <span class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)] text-[#ffffff] text-base font-bold shadow-sm">OP</span>
         <div>
           <p class="font-bold tracking-tight text-lg text-[var(--color-ink)]">{{ t('app') }}</p>
-          <p class="text-xs font-mono text-[var(--color-ink-soft)]">IT operations console</p>
+          <p class="text-xs font-mono text-[var(--color-ink-soft)]">{{ t('it_ops_console') }}</p>
         </div>
       </div>
 
       <div class="relative space-y-6">
         <h1 class="text-4xl lg:text-5xl font-bold tracking-tight text-[var(--color-ink)] leading-[1.05]">
-          Onboard every starter with clarity.
+          {{ t('onboard_starters') }}
         </h1>
         <p class="text-base text-[var(--color-ink-soft)] max-w-md leading-relaxed">
-          Checklist dependencies, hardware handover, access provisioning, open items, and a full audit trail — in one place.
+          {{ t('checklist_deps_desc') }}
         </p>
         <div class="flex flex-wrap gap-2">
-          <span class="status-badge bg-[var(--color-accent-soft)] text-[var(--color-accent)]">IT Admin</span>
-          <span class="status-badge bg-[var(--color-secondary-soft)] text-[var(--color-secondary)]">Manager</span>
-          <span class="status-badge bg-[var(--color-emerald-soft)] text-[var(--color-emerald)]">New Employee</span>
+          <span class="status-badge bg-[var(--color-accent-soft)] text-[var(--color-accent)]">{{ t('it_admin') }}</span>
+          <span class="status-badge bg-[var(--color-secondary-soft)] text-[var(--color-secondary)]">{{ t('manager_role') }}</span>
+          <span class="status-badge bg-[var(--color-emerald-soft)] text-[var(--color-emerald)]">{{ t('new_employee') }}</span>
         </div>
       </div>
 
@@ -64,7 +64,7 @@
           <span class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)] text-[#ffffff] text-base font-bold shadow-sm">OP</span>
           <div>
             <p class="font-bold tracking-tight text-lg text-[var(--color-ink)]">{{ t('app') }}</p>
-            <p class="text-xs font-mono text-[var(--color-ink-soft)]">IT operations console</p>
+            <p class="text-xs font-mono text-[var(--color-ink-soft)]">{{ t('it_ops_console') }}</p>
           </div>
         </div>
 
@@ -72,7 +72,7 @@
           <div class="absolute top-0 left-0 right-0 h-1 bg-[var(--color-accent)] rounded-t-[var(--radius-md)]"></div>
 
           <h2 class="text-2xl font-bold tracking-tight text-[var(--color-ink)] mb-1">{{ t('login') }}</h2>
-          <p class="text-sm text-[var(--color-ink-soft)] mb-6">Sign in to continue.</p>
+          <p class="text-sm text-[var(--color-ink-soft)] mb-6">{{ t('sign_in_continue') }}</p>
 
           <form @submit.prevent="submit" class="space-y-5">
             <label class="block">

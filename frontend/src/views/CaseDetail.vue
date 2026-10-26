@@ -333,12 +333,12 @@ async function submitHandover() {
   const today = new Date(todayISO)
   const start = caseData.value?.start_date ? new Date(caseData.value.start_date) : null
   if (d > today) {
-    handoverErr.value = 'Handover date cannot be in the future'
+    handoverErr.value = t('handover_future')
     handoverBusy.value = false
     return
   }
   if (start && d < start) {
-    handoverErr.value = 'Handover date cannot be before start date'
+    handoverErr.value = t('handover_before_start')
     handoverBusy.value = false
     return
   }

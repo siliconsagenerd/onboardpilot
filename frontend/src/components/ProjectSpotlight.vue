@@ -2,11 +2,11 @@
   <aside class="float-widget" aria-label="Companion project">
     <div class="float-widget__monogram" aria-hidden="true">PP</div>
     <div class="float-widget__body">
-      <div class="float-widget__eyebrow">★ Related project</div>
+      <div class="float-widget__eyebrow">{{ t('related_project') }}</div>
       <h3 class="float-widget__title">ProzessPilot</h3>
-      <a href="https://github.com/siliconsagenerd/prozesspilot" target="_blank" rel="noopener" class="float-widget__primary-link">Open ProzessPilot ↗</a>
+      <a href="https://github.com/siliconsagenerd/prozesspilot" target="_blank" rel="noopener" class="float-widget__primary-link">{{ t('open_prozesspilot') }}</a>
       <div class="float-widget__extra">
-        <p class="float-widget__desc">ProzessPilot is a human-in-the-loop workflow copilot for synthetic customer requests: classification, retrieval with citations, drafting and confidence-based approval.</p>
+        <p class="float-widget__desc">{{ t('prozesspilot_desc') }}</p>
         <div class="float-widget__chips">
           <span class="chip">FastAPI</span>
           <span class="chip">LLM</span>
@@ -18,12 +18,15 @@
           <a href="https://github.com/siliconsagenerd/securedoc-ai" target="_blank" rel="noopener" class="float-widget__link">SecureDoc-AI ↗</a>
         </div>
       </div>
-      <div class="float-widget__hint">hover to expand</div>
+      <div class="float-widget__hint">{{ t('hover_expand') }}</div>
     </div>
   </aside>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
+</script>
 
 <style scoped>
 .float-widget {

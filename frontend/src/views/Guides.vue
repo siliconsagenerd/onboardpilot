@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-[var(--color-line)]">
       <div>
         <h1 class="text-2xl font-bold tracking-tight text-[var(--color-ink)] display-heading">{{ t('guides') }}</h1>
-        <p class="text-xs text-[var(--color-ink-soft)] mt-0.5 font-mono">{{ filtered.length }} {{ t('guides').toLowerCase() }} available · searchable knowledge base · click a category to filter</p>
+        <p class="text-xs text-[var(--color-ink-soft)] mt-0.5 font-mono">{{ filtered.length }} {{ t('guides').toLowerCase() }} {{ t('guides_subtitle') }}</p>
       </div>
       <div class="relative">
         <input v-model="q" :placeholder="t('search')"

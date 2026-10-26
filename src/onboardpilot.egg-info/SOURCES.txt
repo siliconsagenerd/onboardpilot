@@ -1,9 +1,15 @@
+README.md
 pyproject.toml
 src/onboardpilot/__init__.py
 src/onboardpilot/auth.py
 src/onboardpilot/config.py
 src/onboardpilot/deps.py
 src/onboardpilot/main.py
+src/onboardpilot.egg-info/._PKG-INFO
+src/onboardpilot.egg-info/._SOURCES.txt
+src/onboardpilot.egg-info/._dependency_links.txt
+src/onboardpilot.egg-info/._requires.txt
+src/onboardpilot.egg-info/._top_level.txt
 src/onboardpilot.egg-info/PKG-INFO
 src/onboardpilot.egg-info/SOURCES.txt
 src/onboardpilot.egg-info/dependency_links.txt
@@ -30,3 +36,8 @@ src/onboardpilot/services/audit.py
 src/onboardpilot/services/seed.py
 src/onboardpilot/services/templates.py
 src/onboardpilot/services/workflow.py
+tests/test_access.py
+tests/test_auth.py
+tests/test_checklist.py
+tests/test_hardware.py
+tests/test_open_items.py

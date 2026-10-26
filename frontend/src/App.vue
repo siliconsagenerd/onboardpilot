@@ -139,7 +139,7 @@ function doLogout() {
 }
 </script>
 
-<style scoped>
+<style>
 .view-fade-enter-active,
 .view-fade-leave-active {
   transition: opacity 0.15s ease, transform 0.15s ease;

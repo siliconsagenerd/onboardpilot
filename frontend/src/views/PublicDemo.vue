@@ -6,7 +6,7 @@
         <p class="text-xs text-[var(--color-ink-soft)] mt-0.5 font-mono">{{ t('public_demo_desc') }}</p>
       </div>
       <div class="flex items-center gap-2">
-        <span class="status-badge bg-[var(--color-accent-soft)] text-[var(--color-accent)] border border-[var(--color-accent)]/20">READ-ONLY TELEMETRY</span>
+        <span class="status-badge bg-[var(--color-accent-soft)] text-[var(--color-accent)] border border-[var(--color-accent)]/20">{{ t('read_only_telemetry') }}</span>
       </div>
     </div>
 
