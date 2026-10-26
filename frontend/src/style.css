@@ -54,41 +54,41 @@
 }
 
 .dark {
-  /* Warm light */
-  --color-canvas: #faf8f5;
-  --color-canvas-subtle: #f2efe8;
-  --color-surface: #ffffff;
-  --color-surface-hover: #f5f2eb;
-  --color-surface-elevated: #ffffff;
+  /* Dark theme */
+  --color-canvas: #1a1816;
+  --color-canvas-subtle: #23201d;
+  --color-surface: #2a2622;
+  --color-surface-hover: #332e29;
+  --color-surface-elevated: #3a342e;
 
-  --color-line: #e8e4dc;
-  --color-line-subtle: #f2efe8;
-  --color-line-strong: #d4cfc4;
+  --color-line: #3f3a33;
+  --color-line-subtle: #332e29;
+  --color-line-strong: #5a544c;
 
-  --color-ink: #1a1816;
-  --color-ink-soft: #5c574e;
-  --color-muted: #8a857c;
+  --color-ink: #f2ede4;
+  --color-ink-soft: #c9c2b6;
+  --color-muted: #9a9388;
 
-  --color-accent: #b8864e;
-  --color-accent-hover: #a87640;
-  --color-accent-soft: rgba(184, 134, 78, 0.12);
-  --color-accent-border: rgba(184, 134, 78, 0.3);
+  --color-accent: #e07a4a;
+  --color-accent-hover: #f08a5a;
+  --color-accent-soft: rgba(224, 122, 74, 0.15);
+  --color-accent-border: rgba(224, 122, 74, 0.35);
 
-  --color-secondary: #e8e4dc;
-  --color-secondary-soft: rgba(26, 24, 22, 0.06);
+  --color-secondary: #c9c2b6;
+  --color-secondary-soft: rgba(242, 237, 228, 0.08);
 
-  --color-emerald: #059669;
-  --color-emerald-soft: rgba(5, 150, 105, 0.12);
-  --color-amber: #b45309;
-  --color-amber-soft: rgba(180, 83, 9, 0.12);
-  --color-rose: #dc2626;
-  --color-rose-soft: rgba(220, 38, 38, 0.12);
-  --color-sky: #0284c7;
-  --color-sky-soft: rgba(2, 132, 199, 0.12);
+  --color-emerald: #4ade80;
+  --color-emerald-soft: rgba(74, 222, 128, 0.15);
+  --color-amber: #fbbf24;
+  --color-amber-soft: rgba(251, 191, 36, 0.15);
+  --color-rose: #f87171;
+  --color-rose-soft: rgba(248, 113, 113, 0.15);
+  --color-sky: #38bdf8;
+  --color-sky-soft: rgba(56, 189, 248, 0.15);
 
-  --shadow-panel: 0 1px 2px rgba(26, 24, 22, 0.04), 0 8px 24px rgba(26, 24, 22, 0.06);
-  --shadow-card: 0 1px 3px rgba(26, 24, 22, 0.05), 0 2px 8px rgba(26, 24, 22, 0.04);
-  --shadow-elevated: 0 8px 32px rgba(26, 24, 22, 0.12), 0 2px 6px rgba(26, 24, 22, 0.06);
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 html {
