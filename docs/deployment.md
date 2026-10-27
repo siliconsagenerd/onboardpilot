@@ -49,4 +49,4 @@
 1. Back up `/data/onboardpilot.db` before any risky change.
 2. Restore the SQLite file from backup into the mounted volume.
 3. Restart the backend once.
-4. Verify `/public/demo` and a protected route.
+4. Verify `/api/public/demo` and a protected route.

@@ -37,7 +37,7 @@ def test_protected_without_token(client):
 
 
 def test_public_demo_no_auth(client):
-    r = client.get("/public/demo")
+    r = client.get("/api/public/demo")
     assert r.status_code == 200
     data = r.json()
     assert data["case"]["employee_name"] == "Anna Beispiel"
@@ -45,7 +45,7 @@ def test_public_demo_no_auth(client):
 
 
 def test_public_guides(client):
-    r = client.get("/public/guides")
+    r = client.get("/api/public/guides")
     assert r.status_code == 200
     assert len(r.json()) >= 1
 

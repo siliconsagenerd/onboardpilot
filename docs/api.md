@@ -1,6 +1,6 @@
 # OnboardPilot API
 
-Base URL: `http://localhost:8000` (dev). All `/api/*` routes require `Authorization: Bearer <token>` except `/api/auth/login`. `/public/*` and `/health` are open.
+Base URL: `http://localhost:8000` (dev). All `/api/*` routes require `Authorization: Bearer <token>` except `/api/auth/login`. `/api/public/*` and `/health` are open.
 
 ## Auth
 - `POST /api/auth/login` body `{username, password}` -> `{access_token, token_type, role, full_name}`
@@ -53,8 +53,8 @@ Roles: `it_admin`, `manager`, `employee`. Demo users: admin/Admin123!, manager/M
 - `GET /api/templates`
 
 ## Public (read-only)
-- `GET /public/demo`
-- `GET /public/guides?q=`
+- `GET /api/public/demo`
+- `GET /api/public/guides?q=`
 
 ## Health
 - `GET /health`
