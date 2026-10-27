@@ -45,6 +45,8 @@ class Settings(BaseSettings):
         if self.app_env != "development":
             if not self.secret_key or self.secret_key == "change-me-in-production-please-use-env":
                 raise ValueError("SECRET_KEY must be set to a non-default value outside development")
+            if len(self.secret_key) < 32:
+                raise ValueError("SECRET_KEY must be at least 32 characters outside development")
             if not self.operator_auth_required:
                 raise ValueError("OPERATOR_AUTH_REQUIRED=false is only allowed in development")
             if self.cors_origins.strip() == "*":

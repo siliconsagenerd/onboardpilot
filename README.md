@@ -120,7 +120,7 @@ Backend läuft unter `http://localhost:8000`, Frontend unter `http://localhost:5
 | Variable | Standardwert | Zweck |
 |---|---|---|
 | `DATABASE_URL` | `sqlite:///./onboardpilot.db` | Pfad zur SQLite-Datenbankdatei |
-| `JWT_SECRET` | `change-me-in-production` | Geheimer Schlüssel zur Signierung der JWT-Tokens |
+| `SECRET_KEY` | (erforderlich in Prod) | Geheimer Schlüssel zur Signierung der JWT-Tokens |
 | `JWT_EXPIRE_MINUTES` | `480` | Gültigkeitsdauer der Authentifizierungstokens |
 | `VITE_API_BASE_URL` | `https://sublime-vibrancy-production-3a42.up.railway.app` | Backend-URL für das Frontend |
 
@@ -137,7 +137,7 @@ Ergebnis: 20 bestandene Tests (Authentifizierung, Fallstatus, Hardware-Logik, Zu
 - Synthetische Demo-Daten; keine Verbindung zu echtem Microsoft 365, Azure AD oder Google Workspace.
 - Kein automatisierter E-Mail- oder SMS-Versand implementiert (im Prototyp bewusst deaktiviert).
 - Single-Node-SQLite über Railway Persistent Volume (ausreichend für Demo-Betrieb, für Produktionsbetrieb PostgreSQL empfohlen).
-- E2E-Browser-Tests laufen lokal via Agent-Browser / Playwright, keine CI-integrierte Matrix.
+- E2E-Browser-Tests laufen lokal via Agent-Browser / Playwright; Backend-Smoke-Tests (23 pytest, inkl. Rollen-Login, Fall-Lebenszyklus, PDF) laufen in CI.
 
 ### Dokumentation
 
@@ -212,6 +212,7 @@ npm run dev
 ### Known Limitations
 
 - Synthetic sample data; no active integration with corporate Active Directory or Google Workspace.
+- E2E-Browser-Tests via Playwright/Agent-Browser optional; Backend-Smoke-Tests (23 pytest, including role login, case lifecycle, PDF) cover the core flow in CI.
 - Outbound emails and notifications are mocked for demo safety.
 - Single-instance SQLite backend hosted on a Railway persistent volume.
 

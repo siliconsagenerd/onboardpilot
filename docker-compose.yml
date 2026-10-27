@@ -11,8 +11,9 @@ services:
       - APP_ENV=development
       - SECRET_KEY=${SECRET_KEY}
       - OPERATOR_AUTH_REQUIRED=true
-      - DATABASE_URL=sqlite:////app/data/onboardpilot.db
+      - DATABASE_URL=${DATABASE_URL:-sqlite:////app/data/onboardpilot.db}
       - SEED_ON_STARTUP=false
+    profiles: ["default", "postgres"]
   frontend:
     build:
       context: ./frontend
@@ -21,6 +22,23 @@ services:
       - "5173:80"
     depends_on:
       - backend
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    environment:
+      - POSTGRES_USER=onboardpilot
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-onboardpilot}
+      - POSTGRES_DB=onboardpilot
+    volumes:
+      - onboardpilot_pg:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onboardpilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   onboardpilot_data:
+  onboardpilot_pg:
