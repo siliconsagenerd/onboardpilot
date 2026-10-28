@@ -4,7 +4,7 @@
     <div class="float-widget__body">
       <div class="float-widget__eyebrow">{{ t('related_project') }}</div>
       <h3 class="float-widget__title">ProzessPilot</h3>
-      <a href="https://github.com/siliconsagenerd/prozesspilot" target="_blank" rel="noopener" class="float-widget__primary-link">{{ t('open_prozesspilot') }}</a>
+      <a href="https://prozesspilot.duckdns.org/#/" target="_blank" rel="noopener" class="float-widget__primary-link">{{ t('open_prozesspilot') }}</a>
       <div class="float-widget__extra">
         <p class="float-widget__desc">{{ t('prozesspilot_desc') }}</p>
         <div class="float-widget__chips">
