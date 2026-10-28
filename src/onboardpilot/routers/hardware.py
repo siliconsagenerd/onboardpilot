@@ -7,13 +7,14 @@ from datetime import date as _date
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
-from onboardpilot.db.models import ChecklistItem, HardwareAsset
+from onboardpilot.db.models import ChecklistItem, HardwareAsset, OnboardingCase
 from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
+from onboardpilot.services.permissions import accessible_case_ids, case_accessible
 
 router = APIRouter(prefix="/api", tags=["hardware"])
 
@@ -44,6 +45,22 @@ class HardwareUpdate(BaseModel):
     return_status: ReturnStatus | None = None
     notes: str | None = None
 
+    @model_validator(mode="after")
+    def _reject_explicit_nulls(self):
+        for field in (
+            "asset_type",
+            "brand_model",
+            "serial_number",
+            "condition",
+            "handover_date",
+            "assigned_employee",
+            "return_status",
+            "notes",
+        ):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null")
+        return self
+
 
 def _to_dict(h: HardwareAsset) -> dict:
     return {
@@ -72,6 +89,16 @@ def list_hardware(
     q = select(HardwareAsset)
     if case_id:
         q = q.where(HardwareAsset.case_id == case_id)
+    ids = accessible_case_ids(db, user)
+    if ids is not None:
+        if case_id:
+            c = db.get(OnboardingCase, case_id)
+            if not c or not case_accessible(user, c):
+                raise HTTPException(403, "forbidden")
+        else:
+            if not ids:
+                return []
+            q = q.where(HardwareAsset.case_id.in_(ids))
     q = q.limit(limit).offset(offset)
     return [_to_dict(h) for h in db.execute(q).scalars().all()]
 
@@ -82,6 +109,13 @@ def create_hardware(
     db=Depends(get_db),
     user=Depends(require_role("it_admin")),
 ):
+    if payload.case_id:
+        c = db.get(OnboardingCase, payload.case_id)
+        if not c:
+            raise HTTPException(404, "case not found")
+        ids = accessible_case_ids(db, user)
+        if ids is not None and payload.case_id not in ids:
+            raise HTTPException(403, "forbidden")
     h = HardwareAsset(**payload.model_dump())
     db.add(h)
     db.flush()
@@ -92,7 +126,6 @@ def create_hardware(
                 it.status = "completed"
                 it.completed_at = datetime.now(UTC)
                 it.completed_by = user.get("name", "operator")
-    db.commit()
     audit(
         user.get("name", "operator"),
         "hardware_assigned",
@@ -100,7 +133,9 @@ def create_hardware(
         h.id,
         f"Assigned {h.asset_type} {h.brand_model}",
         h.case_id,
+        db=db,
     )
+    db.commit()
     return _to_dict(h)
 
 
@@ -114,7 +149,17 @@ def update_hardware(
     h = db.get(HardwareAsset, asset_id)
     if not h:
         raise HTTPException(404, "not found")
+    ids = accessible_case_ids(db, user)
+    if ids is not None and h.case_id and h.case_id not in ids:
+        raise HTTPException(403, "forbidden")
     data = payload.model_dump(exclude_unset=True)
+    # validate case_id if provided
+    if "case_id" in data and data["case_id"]:
+        c = db.get(OnboardingCase, data["case_id"])
+        if not c:
+            raise HTTPException(404, "case not found")
+        if ids is not None and data["case_id"] not in ids:
+            raise HTTPException(403, "forbidden")
     # validate handover_date if present
     if "handover_date" in data and data["handover_date"]:
         try:
@@ -125,6 +170,24 @@ def update_hardware(
             raise HTTPException(400, "handover_date cannot be in the future")
     for key, value in data.items():
         setattr(h, key, value)
+    # sync checklist if handover present
+    target_case = h.case_id
+    if target_case and h.handover_date:
+        items = db.execute(select(ChecklistItem).where(ChecklistItem.case_id == target_case)).scalars().all()
+        for it in items:
+            if it.key == h.asset_type and it.status in ("not_started", "in_progress", "blocked"):
+                it.status = "completed"
+                it.completed_at = datetime.now(UTC)
+                it.completed_by = user.get("name", "operator")
+    audit(
+        user.get("name", "operator"),
+        "hardware_updated",
+        "hardware",
+        h.id,
+        f"Updated {h.asset_type} {h.brand_model}",
+        h.case_id,
+        db=db,
+    )
     db.commit()
     return _to_dict(h)
 
@@ -138,6 +201,9 @@ def delete_hardware(
     h = db.get(HardwareAsset, asset_id)
     if not h:
         raise HTTPException(404, "not found")
+    ids = accessible_case_ids(db, user)
+    if ids is not None and h.case_id and h.case_id not in ids:
+        raise HTTPException(403, "forbidden")
     db.delete(h)
     db.commit()
     return {"ok": True}

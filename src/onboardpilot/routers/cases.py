@@ -6,14 +6,15 @@ import datetime as dt
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
 from onboardpilot.db.models import ChecklistItem, OnboardingCase
 from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
-from onboardpilot.services.templates import generate_checklist_items
+from onboardpilot.services.permissions import accessible_case_ids, case_accessible
+from onboardpilot.services.templates import ROLE_TEMPLATES, generate_checklist_items
 
 router = APIRouter(prefix="/api/cases", tags=["cases"])
 
@@ -36,6 +37,13 @@ class CaseIn(BaseModel):
     manager_name: str = ""
     manager_email: str = ""
 
+    @field_validator("role_template")
+    @classmethod
+    def _valid_template(cls, v: str) -> str:
+        if v not in ROLE_TEMPLATES:
+            raise ValueError(f"unknown role template: {v}")
+        return v
+
 
 class CaseUpdate(BaseModel):
     employee_name: str | None = None
@@ -45,6 +53,21 @@ class CaseUpdate(BaseModel):
     manager_name: str | None = None
     manager_email: str | None = None
     status: CaseStatus | None = None
+
+    @model_validator(mode="after")
+    def _reject_explicit_nulls(self):
+        for field in (
+            "employee_name",
+            "employee_email",
+            "department",
+            "start_date",
+            "manager_name",
+            "manager_email",
+            "status",
+        ):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null")
+        return self
 
 
 def _case_to_dict(c: OnboardingCase) -> dict:
@@ -67,16 +90,24 @@ def _case_to_dict(c: OnboardingCase) -> dict:
 
 @router.get("")
 def list_cases(
+    status: str | None = None,
+    role_template: str | None = None,
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db=Depends(get_db),
     user=Depends(get_current_user),
 ):
-    cases = (
-        db.execute(select(OnboardingCase).order_by(OnboardingCase.created_at.desc()).limit(limit).offset(offset))
-        .scalars()
-        .all()
-    )
+    q = select(OnboardingCase).order_by(OnboardingCase.created_at.desc())
+    if status is not None:
+        q = q.where(OnboardingCase.status == status)
+    if role_template is not None:
+        q = q.where(OnboardingCase.role_template == role_template)
+    ids = accessible_case_ids(db, user)
+    if ids is not None:
+        if not ids:
+            return []
+        q = q.where(OnboardingCase.id.in_(ids))
+    cases = db.execute(q.limit(limit).offset(offset)).scalars().all()
     return [_case_to_dict(c) for c in cases]
 
 
@@ -85,6 +116,8 @@ def get_case(case_id: str, db=Depends(get_db), user=Depends(get_current_user)):
     c = db.get(OnboardingCase, case_id)
     if not c:
         raise HTTPException(404, "case not found")
+    if not case_accessible(user, c):
+        raise HTTPException(403, "forbidden")
     return _case_to_dict(c)
 
 
@@ -131,6 +164,8 @@ def update_case(
     c = db.get(OnboardingCase, case_id)
     if not c:
         raise HTTPException(404, "case not found")
+    if not case_accessible(user, c):
+        raise HTTPException(403, "forbidden")
     for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(c, key, value)
     c.updated_at = dt.datetime.now(dt.UTC)
@@ -148,6 +183,8 @@ def delete_case(
     c = db.get(OnboardingCase, case_id)
     if not c:
         raise HTTPException(404, "case not found")
+    if not case_accessible(user, c):
+        raise HTTPException(403, "forbidden")
     db.delete(c)
     db.commit()
     audit(user.get("name", "operator"), "case_deleted", "case", case_id, "Deleted case")

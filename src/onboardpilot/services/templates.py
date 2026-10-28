@@ -232,6 +232,8 @@ CATEGORY_MAP = {
 
 
 def generate_checklist_items(case_id: str, role_template: str, start_date: str) -> list[dict]:
+    if role_template not in ROLE_TEMPLATES:
+        raise ValueError(f"unknown role template: {role_template}")
     tmpl = ROLE_TEMPLATES[role_template]
     items = []
     for key, t_de, t_en, cat, owner, order, deps in tmpl["items"]:

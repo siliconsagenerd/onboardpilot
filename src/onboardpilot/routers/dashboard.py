@@ -10,13 +10,20 @@ from sqlalchemy import select
 from onboardpilot.db import get_db
 from onboardpilot.db.models import AccessRequest, ChecklistItem, OnboardingCase, OpenItem
 from onboardpilot.deps import get_current_user
+from onboardpilot.services.permissions import accessible_case_ids
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 
 @router.get("/summary")
 def summary(db=Depends(get_db), user=Depends(get_current_user)):
-    cases = db.execute(select(OnboardingCase)).scalars().all()
+    ids = accessible_case_ids(db, user)
+    all_cases = db.execute(select(OnboardingCase)).scalars().all()
+    if ids is not None:
+        cases = [c for c in all_cases if c.id in ids]
+    else:
+        cases = list(all_cases)
+    case_id_set = {c.id for c in cases}
     today = date.today()
     monday = today + timedelta(days=(7 - today.weekday()) % 7)
     if monday == today:
@@ -34,6 +41,8 @@ def summary(db=Depends(get_db), user=Depends(get_current_user)):
     incomplete = [c for c in cases if c.status != "completed"]
     overdue_items = []
     for it in db.execute(select(ChecklistItem)).scalars().all():
+        if it.case_id not in case_id_set:
+            continue
         if it.status != "completed" and it.due_date:
             try:
                 if date.fromisoformat(it.due_date) < today:
@@ -41,8 +50,16 @@ def summary(db=Depends(get_db), user=Depends(get_current_user)):
             except Exception:
                 pass
     # "Blocked" access requests are pending requests that have not progressed.
-    blocked_access = [a for a in db.execute(select(AccessRequest)).scalars().all() if a.status == "requested"]
-    open_items = db.execute(select(OpenItem)).scalars().all()
+    blocked_access = [
+        a
+        for a in db.execute(select(AccessRequest)).scalars().all()
+        if a.status == "requested" and a.case_id in case_id_set
+    ]
+    open_items = [
+        o
+        for o in db.execute(select(OpenItem)).scalars().all()
+        if o.case_id in case_id_set or (ids is None and o.case_id is None)
+    ]
     open_by_owner = {}
     for o in open_items:
         if o.status != "resolved":

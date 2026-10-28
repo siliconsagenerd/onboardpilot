@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from onboardpilot.config import settings
 from onboardpilot.db import engine
+from onboardpilot.db import get_db as _get_db
 from onboardpilot.db.models import Base
 from onboardpilot.routers import (
     access,
@@ -60,6 +61,18 @@ app.include_router(dashboard.router)
 app.include_router(templates.router)
 app.include_router(handover.router)
 app.include_router(public.router)
+
+# Backwards-compatible public routes (documented without /api prefix)
+
+
+@app.get("/public/demo")
+def _public_demo_alias(db=Depends(_get_db)):
+    return public.public_demo(db)
+
+
+@app.get("/public/guides")
+def _public_guides_alias(q: str = "", db=Depends(_get_db)):
+    return public.public_guides(q=q, db=db)
 
 
 @app.get("/health")

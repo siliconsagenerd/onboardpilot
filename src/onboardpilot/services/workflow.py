@@ -37,6 +37,9 @@ def recompute_blocked(items: list[ChecklistItem]) -> None:
             it.status = "blocked"
             it.blocked_reason = reason
         else:
+            if it.status == "blocked" and not (it.blocked_reason or "").startswith("Blocked: requires"):
+                # preserve manually blocked items
+                continue
             if it.status == "blocked":
                 it.status = "not_started"
                 it.blocked_reason = ""

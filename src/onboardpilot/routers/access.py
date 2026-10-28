@@ -6,13 +6,14 @@ from datetime import UTC, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
-from onboardpilot.db.models import AccessRequest
+from onboardpilot.db.models import AccessRequest, OnboardingCase
 from onboardpilot.deps import get_current_user, require_role
 from onboardpilot.services.audit import audit
+from onboardpilot.services.permissions import accessible_case_ids
 
 router = APIRouter(prefix="/api", tags=["access"])
 
@@ -31,6 +32,13 @@ class AccessUpdate(BaseModel):
     notes: str | None = None
     approver: str | None = None
     provisioning_owner: str | None = None
+
+    @model_validator(mode="after")
+    def _reject_explicit_nulls(self):
+        for field in ("status", "notes", "approver", "provisioning_owner"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null")
+        return self
 
 
 def _to_dict(a: AccessRequest) -> dict:
@@ -61,6 +69,16 @@ def list_access(
     q = select(AccessRequest)
     if case_id:
         q = q.where(AccessRequest.case_id == case_id)
+    ids = accessible_case_ids(db, user)
+    if ids is not None:
+        if case_id:
+            c = db.get(OnboardingCase, case_id)
+            if not c or c.id not in ids:
+                raise HTTPException(403, "forbidden")
+        else:
+            if not ids:
+                return []
+            q = q.where(AccessRequest.case_id.in_(ids))
     q = q.limit(limit).offset(offset)
     return [_to_dict(a) for a in db.execute(q).scalars().all()]
 
@@ -71,6 +89,12 @@ def create_access(
     db=Depends(get_db),
     user=Depends(require_role("it_admin", "manager")),
 ):
+    c = db.get(OnboardingCase, payload.case_id)
+    if not c:
+        raise HTTPException(404, "case not found")
+    ids = accessible_case_ids(db, user)
+    if ids is not None and payload.case_id not in ids:
+        raise HTTPException(403, "forbidden")
     a = AccessRequest(
         case_id=payload.case_id,
         access_type=payload.access_type,
@@ -79,8 +103,11 @@ def create_access(
         notes=payload.notes,
     )
     db.add(a)
+    db.flush()
+    audit(
+        user.get("name", "operator"), "access_requested", "access", a.id, f"{a.access_type} requested", a.case_id, db=db
+    )
     db.commit()
-    audit(user.get("name", "operator"), "access_requested", "access", a.id, f"{a.access_type} requested", a.case_id)
     return _to_dict(a)
 
 
@@ -94,6 +121,13 @@ def update_access(
     a = db.get(AccessRequest, req_id)
     if not a:
         raise HTTPException(404, "not found")
+    # access check
+    c = db.get(OnboardingCase, a.case_id)
+    if c:
+        from onboardpilot.services.permissions import case_accessible
+
+        if not case_accessible(user, c):
+            raise HTTPException(403, "forbidden")
     statuses = ["requested", "approved", "provisioned", "verified"]
     if payload.status and payload.status != a.status:
         ci = statuses.index(a.status)
@@ -118,10 +152,17 @@ def update_access(
         a.approver = payload.approver
     if payload.provisioning_owner is not None:
         a.provisioning_owner = payload.provisioning_owner
-    db.commit()
+    db.flush()
     audit(
-        user.get("name", "operator"), f"access_{a.status}", "access", a.id, f"{a.access_type} -> {a.status}", a.case_id
+        user.get("name", "operator"),
+        f"access_{a.status}",
+        "access",
+        a.id,
+        f"{a.access_type} -> {a.status}",
+        a.case_id,
+        db=db,
     )
+    db.commit()
     return _to_dict(a)
 
 

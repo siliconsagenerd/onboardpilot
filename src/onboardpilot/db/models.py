@@ -58,7 +58,7 @@ class OnboardingCase(Base):
     updated_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
     checklist_items: Mapped[list[ChecklistItem]] = relationship(back_populates="case", cascade="all, delete-orphan")
-    hardware: Mapped[list[HardwareAsset]] = relationship(back_populates="case", cascade="all, delete-orphan")
+    hardware: Mapped[list[HardwareAsset]] = relationship(back_populates="case", passive_deletes=True)
     access_requests: Mapped[list[AccessRequest]] = relationship(back_populates="case", cascade="all, delete-orphan")
     open_items: Mapped[list[OpenItem]] = relationship(back_populates="case", cascade="all, delete-orphan")
     audit_entries: Mapped[list[AuditLog]] = relationship(back_populates="case", cascade="all, delete-orphan")

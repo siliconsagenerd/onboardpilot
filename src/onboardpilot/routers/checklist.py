@@ -6,13 +6,14 @@ from datetime import UTC, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from sqlalchemy import select
 
 from onboardpilot.db import get_db
-from onboardpilot.db.models import ChecklistItem
-from onboardpilot.deps import get_current_user, require_role
+from onboardpilot.db.models import ChecklistItem, OnboardingCase
+from onboardpilot.deps import get_current_user
 from onboardpilot.services.audit import audit
+from onboardpilot.services.permissions import case_accessible
 from onboardpilot.services.workflow import can_complete, recompute_blocked
 
 router = APIRouter(prefix="/api", tags=["checklist"])
@@ -23,6 +24,13 @@ ChecklistStatus = Literal["not_started", "in_progress", "completed", "blocked"]
 class ItemUpdate(BaseModel):
     status: ChecklistStatus | None = None
     blocked_reason: str | None = None
+
+    @model_validator(mode="after")
+    def _reject_explicit_nulls(self):
+        # status is genuinely optional; blocked_reason nullable? keep clearable via empty string
+        if "status" in self.model_fields_set and self.status is None:
+            raise ValueError("status cannot be null")
+        return self
 
 
 def _item_to_dict(i: ChecklistItem) -> dict:
@@ -54,6 +62,11 @@ def get_checklist(
     db=Depends(get_db),
     user=Depends(get_current_user),
 ):
+    case = db.get(OnboardingCase, case_id)
+    if not case:
+        raise HTTPException(404, "case not found")
+    if not case_accessible(user, case):
+        raise HTTPException(403, "forbidden")
     items = (
         db.execute(
             select(ChecklistItem)
@@ -73,11 +86,21 @@ def update_item(
     item_id: str,
     payload: ItemUpdate,
     db=Depends(get_db),
-    user=Depends(require_role("it_admin", "manager")),
+    user=Depends(get_current_user),
 ):
     item = db.get(ChecklistItem, item_id)
     if not item:
         raise HTTPException(404, "item not found")
+    case = db.get(OnboardingCase, item.case_id)
+    if case and not case_accessible(user, case):
+        raise HTTPException(403, "forbidden")
+    # permission: employee can only act on employee-owned items
+    if item.owner == "employee":
+        if user.get("role") not in ("employee", "it_admin", "manager"):
+            raise HTTPException(403, "forbidden")
+    else:
+        if user.get("role") not in ("it_admin", "manager"):
+            raise HTTPException(403, "forbidden")
     case_items = db.execute(select(ChecklistItem).where(ChecklistItem.case_id == item.case_id)).scalars().all()
     if payload.status == "completed":
         ok, reason = can_complete(item, case_items)
@@ -90,7 +113,11 @@ def update_item(
         action = "item_completed"
     elif payload.status:
         item.status = payload.status
-        item.blocked_reason = payload.blocked_reason or ""
+        if payload.status in ("not_started", "in_progress"):
+            item.completed_at = None
+            item.completed_by = ""
+        if payload.blocked_reason is not None:
+            item.blocked_reason = payload.blocked_reason
         action = "item_updated"
     else:
         if payload.blocked_reason is not None:
@@ -108,11 +135,20 @@ def update_item(
 def reopen_item(
     item_id: str,
     db=Depends(get_db),
-    user=Depends(require_role("it_admin", "manager")),
+    user=Depends(get_current_user),
 ):
     item = db.get(ChecklistItem, item_id)
     if not item:
         raise HTTPException(404, "item not found")
+    case = db.get(OnboardingCase, item.case_id)
+    if case and not case_accessible(user, case):
+        raise HTTPException(403, "forbidden")
+    if item.owner == "employee":
+        if user.get("role") not in ("employee", "it_admin", "manager"):
+            raise HTTPException(403, "forbidden")
+    else:
+        if user.get("role") not in ("it_admin", "manager"):
+            raise HTTPException(403, "forbidden")
     item.status = "not_started"
     item.completed_at = None
     item.completed_by = ""
